@@ -1,0 +1,2 @@
+server-configuration:
+  services-address: 'http://localhost:3333'

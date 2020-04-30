@@ -1,0 +1,185 @@
+categories:
+  blocks:
+    name: 'Blocks'
+    icon: 'STAINED_CLAY:5 : 1 : display=&aBlocks : lore=&eClick to view!'
+    items:
+      wool:
+        icon: 'WOOL : 16 : display={color}Wool : lore=&7Cost: &f4 Iron\n \n&7Great for bridging across\n&7islands. Turns into your team''s\n&7color.'
+        price: 'IRON_INGOT : 4'
+        content: ['WOOL : 16']
+      clay:
+        icon: 'STAINED_CLAY : 16 : display={color}Hardened Clay : lore=&7Cost: &f12 Iron\n \n&7Basic block to defend your bed.'
+        price: 'IRON_INGOT : 12'
+        content: ['STAINED_CLAY : 16']
+      blastproofglass:
+        icon: 'GLASS : 4 : display={color}Blast-Proof Glass : lore=&7Cost: &f12 Iron\n \n&7Immune to explosions.'
+        price: 'IRON_INGOT : 14'
+        content: ['GLASS : 4']
+      endstone:
+        icon: 'ENDER_STONE : 12 : display={color}End Stone : lore=&7Cost: &f24 Iron\n \n&7Solid block to defend your bed.'
+        price: 'IRON_INGOT : 24'
+        content: ['ENDER_STONE : 12']
+      ladder:
+        icon: 'LADDER : 16 : display={color}Ladder : lore=&7Cost: &f4 Iron\n \n&7Useful to save cats stuck in\n&7trees.'
+        price: 'IRON_INGOT : 4'
+        content: ['LADDER : 16']
+      oakwoodplanks:
+        icon: 'WOOD : 16 : display={color}Oak Wood Planks : lore=&7Cost: &64 Gold\n \n&7Good block to defend your bed.\n&7Strong against pickaxes.'
+        price: 'GOLD_INGOT : 4'
+        content: ['WOOD : 16']
+      obsidian:
+        icon: 'OBSIDIAN : 4 : display={color}Obsidian : lore=&7Cost: &24 Emerald\n \n&7Extreme protection for your bed.'
+        price: 'EMERALD : 4'
+        content: ['OBSIDIAN : 4']
+  melee:
+    name: 'Melee'
+    icon: 'DIAMOND_SWORD : 1 : flags=all : display=&aMelee : lore=&eClick to view!'
+    items:
+      stone:
+        icon: 'STONE_SWORD : 1 : display={color}Stone Sword : lore=&7Cost: &f10 Iron'
+        price: 'IRON_INGOT : 10'
+        content: ['STONE_SWORD : 1']
+      iron:
+        icon: 'IRON_SWORD : 1 : display={color}Iron Sword : lore=&7Cost: &67 Gold'
+        price: 'GOLD_INGOT : 7'
+        content: ['IRON_SWORD : 1']
+        block: ['stone']
+      diamond:
+        icon: 'DIAMOND_SWORD : 1 : display={color}Diamond Sword : lore=&7Cost: &24 Emerald'
+        price: 'EMERALD : 4'
+        content: ['DIAMOND_SWORD : 1']
+        block: ['stone', 'iron']
+      stick:
+        icon: 'STICK : 1 : display={color}Stick (Knockback I) : lore=&7Cost: &65 Gold'
+        price: 'GOLD_INGOT : 5'
+        content: ['STICK : 1 : enchantments=KNOCKBACK:1']
+  armors:
+    name: 'Armor'
+    icon: 'DIAMOND_BOOTS : 1 : display=&aArmor : lore=&eClick to view!'
+    items:
+      chainmail:
+        lostOnDie: false
+        icon: 'CHAINMAIL_BOOTS : 1 : display={color}Permanent Chainmail Armor : lore=&7Cost: &f40 Iron\n \n&7Chainmail leggings and boots\n&7which you will always spawn\n&7with.'
+        price: 'IRON_INGOT : 40'
+        content: ['CHAINMAIL_LEGGINGS : 1', 'CHAINMAIL_BOOTS : 1']
+        block: ['chainmail']
+      iron:
+        lostOnDie: false
+        icon: 'IRON_BOOTS : 1 : display={color}Permanent Iron Armor : lore=&7Cost: &612 Gold\n \n&7Iron leggings and boots which\n&7you will always spawn with.'
+        price: 'GOLD_INGOT : 12'
+        content: ['IRON_LEGGINGS : 1', 'IRON_BOOTS : 1']
+        block: ['chainmail', 'iron']
+      diamond:
+        lostOnDie: false
+        icon: 'DIAMOND_BOOTS : 1 : display={color}Permanent Diamond Armor : lore=&7Cost: &26 Emerald\n \n&7Diamond leggings and boots which\n&7you will always spawn with.'
+        price: 'EMERALD : 6'
+        content: ['DIAMOND_LEGGINGS : 1', 'DIAMOND_BOOTS : 1']
+        block: ['chainmail', 'iron', 'diamond']
+  tools:
+    name: 'Tools'
+    icon: 'DIAMOND_PICKAXE : 1 : flags=all : display=&aTools : lore=&eClick to view!'
+    items:
+      shears:
+        lostOnDie: false
+        icon: 'SHEARS : 1 : display={color}Permanent Shears : lore=&7Cost: &f20 Iron\n \n&7Great to get rid of wool. You\n&7will always spawn with these\n&7shears.'
+        price: 'IRON_INGOT : 20'
+        content: ['SHEARS : 1']
+      pickaxe:
+        lostOnDie: false
+        icon: 'WOOD_PICKAXE : 1 : display={color}Wooden Pickaxe (Efficiency {tier}) : lore=&7Cost: &f{price} Iron\n&7Tier: &a{tier}\n \n&7This is an upgradable item.\n&7It will lose 1 tier upon\n&7death!\n \n&7You will permanently\n&7respawn with at least the\n&7lowest tier.'
+        tiers:
+          1:
+            price: 'IRON_INGOT : 10'
+            content: ['WOOD_PICKAXE : 1 : enchantments=DIG_SPEED:1']
+          2:
+            price: 'IRON_INGOT : 20'
+            content: ['WOOD_PICKAXE : 1 : enchantments=DIG_SPEED:2']
+          3:
+            price: 'IRON_INGOT : 20'
+            content: ['WOOD_PICKAXE : 1 : enchantments=DIG_SPEED:3']
+          4:
+            price: 'IRON_INGOT : 30'
+            content: ['WOOD_PICKAXE : 1 : enchantments=DIG_SPEED:4']
+      axe:
+        lostOnDie: false
+        icon: 'WOOD_AXE : 1 : display={color}Wooden Axe (Efficiency {tier}) : lore=&7Cost: &f{price} Iron\n&7Tier: &a{tier}\n \n&7This is an upgradable item.\n&7It will lose 1 tier upon\n&7death!\n \n&7You will permanently\n&7respawn with at least the\n&7lowest tier.'
+        tiers:
+          1:
+            price: 'IRON_INGOT : 10'
+            content: ['WOOD_AXE : 1 : enchantments=DIG_SPEED:1']
+          2:
+            price: 'IRON_INGOT : 20'
+            content: ['WOOD_AXE : 1 : enchantments=DIG_SPEED:2']
+          3:
+            price: 'IRON_INGOT : 20'
+            content: ['WOOD_AXE : 1 : enchantments=DIG_SPEED:3']
+          4:
+            price: 'IRON_INGOT : 30'
+            content: ['WOOD_AXE : 1 : enchantments=DIG_SPEED:4']
+  ranged:
+    name: 'Ranged'
+    icon: 'BOW : 1 : display=&aRanged : lore=&eClick to view!'
+    items:
+      arrow:
+        icon: 'ARROW : 1 : display={color}Arrow : lore=&7Cost: &62 Gold'
+        price: 'GOLD_INGOT : 2'
+        content: ['ARROW : 1']
+      bow:
+        icon: 'BOW : 1 : display={color}Bow : lore=&7Cost: &612 Gold'
+        price: 'GOLD_INGOT : 12'
+        content: ['BOW : 1']
+        block: ['bow']
+      bowp1:
+        icon: 'BOW : 1 : display={color}Bow (Power I) : lore=&7Cost: &624 Gold'
+        price: 'GOLD_INGOT : 24'
+        content: ['BOW : 1 : enchantments=ARROW_DAMAGE:1']
+        block: ['bow', 'bowp1']
+      bowp1p1:
+        icon: 'BOW : 1 : display={color}Bow (Power I, Punch I) : lore=&7Cost: &26 Emerald'
+        price: 'EMERALD : 6'
+        content: ['BOW : 1 : enchantments=ARROW_DAMAGE:1\nARROW_KNOCKBACK:1']
+        block: ['bow', 'bowp1', 'bowp1p1']
+  potions:
+    name: 'Potions'
+    icon: 'BREWING_STAND_ITEM : 1 : display=&aPotions : lore=&eClick to view!'
+    items:
+      speed2:
+        icon: 'POTION : 1 : effect=SPEED\n2\n900 : display={color}Speed II Potion (45 seconds) : lore=&7Cost: &21 Emerald'
+        price: 'EMERALD : 1'
+        content: ['POTION : 1 : effect=SPEED\n2\n900 : display=&aSpeed II Potion (45 seconds)']
+      invisibility1:
+        icon: 'POTION : 1 : effect=INVISIBILITY\n1\n600 : display={color}Invisibility Potion (30 seconds) : lore=&7Cost: &22 Emerald'
+        price: 'EMERALD : 2'
+        content: ['POTION : 1 : effect=INVISIBILITY\n1\n600 : display=&aInvisibility Potion (30 seconds)']
+      jump5:
+        icon: 'POTION : 1 : effect=JUMP\n5\n900 : display={color}Jump V Potion (45 seconds) : lore=&7Cost: &21 Emerald'
+        price: 'EMERALD : 1'
+        content: ['POTION : 1 : effect=JUMP\n5\n900 : display=&aJump V Potion (45 seconds)']
+  utility:
+    name: 'Utility'
+    icon: 'TNT : 1 : display=&aUtility : lore=&eClick to view!'
+    items:
+      goldenapple:
+        icon: 'GOLDEN_APPLE : 1 : display={color}Golden Apple : lore=&7Cost: &63 Gold\n \n&7Well-rounded healing.'
+        price: 'GOLD_INGOT : 3'
+        content: ['GOLDEN_APPLE : 1']
+      fireball:
+        icon: 'FIREBALL : 1 : display={color}Fireball : lore=&7Cost: &f40 Iron\n \n&7Right-click to launch! Great to\n&7knock back enemies walking on&7thin bridges.'
+        price: 'IRON_INGOT : 40'
+        content: ['FIREBALL : 1']
+      tnt:
+        icon: 'TNT : 1 : display={color}TNT : lore=&7Cost: &64 Gold\n \n&7Instantly ignites, appropriate\n&7to explode things!'
+        price: 'GOLD_INGOT : 4'
+        content: ['TNT : 1']
+      enderpearl:
+        icon: 'ENDER_PEARL : 1 : display={color}Ender Pearl : lore=&7Cost: &24 Emerald\n \n&7The quickest way to invade enemy\n&7bases.'
+        price: 'EMERALD : 4'
+        content: ['ENDER_PEARL : 1']
+      waterbucket:
+        icon: 'WATER_BUCKET : 1 : display={color}Water Bucket : lore=&7Cost: &63 Gold\n \n&7Great to slow down approaching\n&7enemies. Can also protect\n&7against TNT.'
+        price: 'GOLD_INGOT : 3'
+        content: ['WATER_BUCKET : 1']
+      sponge:
+        icon: 'SPONGE : 4 : display={color}Sponge : lore=&7Cost: &63 Gold\n \n&7Great for soaking up water.'
+        price: 'GOLD_INGOT : 1'
+        content: ['SPONGE : 4']

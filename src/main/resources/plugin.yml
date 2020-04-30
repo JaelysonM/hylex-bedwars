@@ -1,0 +1,12 @@
+author: Uzm Studio Inc.
+name: ${project.artifactId}
+version: ${project.version}
+depend:
+  - hylex-core
+  - hylex-services
+
+main: ${main-bukkit}
+
+commands:
+   arena:
+   loadworld:

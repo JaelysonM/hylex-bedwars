@@ -16,6 +16,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.uzm.hylex.bedwars.arena.enums.ArenaEnums.ArenaState.*;
 import static com.uzm.hylex.bedwars.arena.team.Team.Sitation.BROKEN_BED;
@@ -53,6 +54,10 @@ public class ArenaTask {
     }.runTaskTimer(Core.getInstance(), 0, 20);
   }
 
+  public int getTime() {
+    return time;
+  }
+
   private final DateFormat DF = new SimpleDateFormat("mm:ss");
 
   public void execute() {
@@ -66,25 +71,32 @@ public class ArenaTask {
         lines.add("");
         lines.add(" " + getArena().getUpgradeState().getName() + " em §a" + DF.format(this.time * 1000) + "s");
         lines.add("");
-        getArena().getTeams().values().forEach(team -> lines.add(" " + team.getTeamType().getScoreboardName() + " §f" + team.getTeamType().getName() + " " + (team.getSitation() == ELIMINATED ? "§c§l✖" : team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a§l✔")));
+        getArena().getTeams().values().forEach(team -> lines.add(
+          " " + team.getTeamType().getScoreboardName() + " §f" + team.getTeamType().getName() + " " + (team.getSitation() == ELIMINATED ?
+            "§c§l✖" :
+            team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a§l✔")));
         lines.add("");
         lines.add("       §bhylex.net");
         getArena().getArenaPlayers().forEach(ap -> {
           if (ap.getScoreboard() != null) {
-            ap.getScoreboard().updateLines(lines);
+            ap.getScoreboard().updateLines(lines.stream().map(result -> {
+              if (result.contains(ap.getTeam().getTeamType().getName()))
+                return result + "§e *";
+              return result;
+
+            }).collect(Collectors.toList()));
+
           }
         });
-
         lines.clear();
+        if (getArena().getUpgradeState().getSubMessage() != null && getTime() == 60 * 5) {
+          getArena().getArenaPlayers().forEach(ap -> ap.getPlayer().sendMessage(
+            getArena().getUpgradeState().getSubMessage().replace("%s", String.valueOf(getTime() / 60)).replace("%format", (getTime() / 60 > 1 ? "minutos" : "minuto"))));
+        }
+
         if (this.time == 0) {
-          getArena().getGenerators().forEach(generator -> {
-            if (generator.getType() == Generator.Type.DIAMOND) {
-              generator.setTier(getArena().getUpgradeState().getDiamondDelay());
-            } else {
-              generator.setTier(getArena().getUpgradeState().getEmeraldDelay());
-            }
-          });
           getArena().setEventState(getArena().getUpgradeState().next());
+          getArena().getArenaPlayers().forEach(ap -> ap.getPlayer().sendMessage(getArena().getUpgradeState().getMessage()));
           this.time = 60 * 5;
           return;
         }
@@ -95,20 +107,12 @@ public class ArenaTask {
         if (getArena().getPlayingPlayers().size() < getArena().getConfiguration().getMinPlayers()) {
           getArena().getArenaPlayers().forEach(ap -> {
             if (ap.getScoreboard() != null) {
-              ap.getScoreboard().updateLines("      §8[" + getArena().getArenaName() + "]",
-                "",
-                " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
-                " Jogadores: §a" + getArena().getPlayingPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(),
-                "",
-                " Aguardando jogadores...",
-                "",
-                " Modo: §a" + getArena().getConfiguration().getMode(),
-                "",
-                "       §bhylex.net");
+              ap.getScoreboard().updateLines("      §8[" + getArena().getArenaName() + "]", "", " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
+                " Jogadores: §a" + getArena().getPlayingPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(), "", " Aguardando jogadores...", "",
+                " Modo: §a" + getArena().getConfiguration().getMode(), "", "       §bhylex.net");
             }
           });
-          if (this.time
-            != 20) {
+          if (this.time != 20) {
             this.time = 20;
             getArena().getArenaPlayers().forEach(ap -> {
               Player player = ap.getPlayer();
@@ -127,16 +131,9 @@ public class ArenaTask {
 
         getArena().getArenaPlayers().forEach(ap -> {
           if (ap.getScoreboard() != null) {
-            ap.getScoreboard().updateLines("      §8[" + getArena().getArenaName(),
-              "",
-              " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
-              " Jogadores: §a" + getArena().getPlayingPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(),
-              "",
-              " Iniciando em §a" + this.time + "s",
-              "",
-              " Modo: §a" + getArena().getConfiguration().getMode(),
-              "",
-              "       §bhylex.net");
+            ap.getScoreboard().updateLines("      §8[" + getArena().getArenaName(), "", " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
+              " Jogadores: §a" + getArena().getPlayingPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(), "", " Iniciando em §a" + this.time + "s", "",
+              " Modo: §a" + getArena().getConfiguration().getMode(), "", "       §bhylex.net");
           }
         });
 

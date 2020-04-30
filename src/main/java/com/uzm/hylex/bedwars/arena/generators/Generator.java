@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import static com.uzm.hylex.bedwars.arena.generators.Generator.Type.DIAMOND;
+import static com.uzm.hylex.bedwars.arena.generators.Generator.Type.EMERALD;
 
 public class Generator {
 
@@ -39,8 +40,8 @@ public class Generator {
     }
   }
 
+
   private Type type;
-  private int tier = 1;
   private int countdown;
   private Location location;
 
@@ -60,8 +61,7 @@ public class Generator {
   public void enable() {
     this.disable();
     this.block = NMS.createGeneratorEntity(this);
-    this.hologram =
-      HologramLibrary.createHologram(location, "§aSpawnando em §c" + this.countdown + " §asegundos", this.type.getName(), "§aNível " + StringUtils.repeat("I", this.tier));
+    this.hologram = HologramLibrary.createHologram(location, "§aSpawnando em §c" + this.countdown + " §asegundos", this.type.getName(), "§aNível " + StringUtils.repeat("I", 1));
   }
 
   public void disable() {
@@ -99,8 +99,8 @@ public class Generator {
 
     if (this.tick == 20) {
       this.tick = 0;
-      this.hologram.updateLine(1, "§aSpawnando em §c" + arena.getUpgradeState().getDiamondDelay() + " §asegundos");
-      this.hologram.updateLine(3, "§aNível " + StringUtils.repeat("I", this.tier));
+      this.hologram.updateLine(1, "§aSpawnando em §c" + getDelay() + " §asegundos");
+      this.hologram.updateLine(3, "§aNível " + StringUtils.repeat("I", getTier()));
       if (this.countdown == 0) {
         if (Utils.getAmountOfItem(this.type.getItem(), this.location) < 4) {
           Item item = this.location.getWorld().dropItem(this.location, new ItemStack(this.type.getItem()));
@@ -117,13 +117,15 @@ public class Generator {
     this.tick++;
   }
 
-  public void setTier(int tier) {
-    this.tier = tier;
-  }
 
   public int getTier() {
-    return tier;
+    return getType() == EMERALD ? arena.getUpgradeState().getEmeraldLevel() : arena.getUpgradeState().getDiamondLevel();
   }
+
+  public int getDelay() {
+    return getType() == EMERALD ? arena.getUpgradeState().getEmeraldDelay() : arena.getUpgradeState().getDiamondDelay();
+  }
+
 
   public Location getLocation() {
     return location;

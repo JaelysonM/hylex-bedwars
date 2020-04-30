@@ -66,5 +66,23 @@ public class OtherListeners implements Listener {
     } else if (displayName.equalsIgnoreCase("§aSalvar alterações")) {
       evt.setCancelled(true);
     }
+    else if (displayName.equalsIgnoreCase("§aSetar > §8Local de espera  §7(Clique para alterar)")) {
+      evt.setCancelled(true);
+    }
+    else if (displayName.equalsIgnoreCase("§aCriar um gerador §8(Tipo definido de acordo com o bloco clicado)")) {
+      evt.setCancelled(true);
+    }
+    else if (displayName.equalsIgnoreCase("§aSetar posições da borda da ilha §7(Esquerdo: Localização #1/Direito: Localização #2)")) {
+      evt.setCancelled(true);
+    }
+    else if (displayName.equalsIgnoreCase("§eAdicionar gerador do time")) {
+      evt.setCancelled(true);
+    }
+    else if (displayName.equalsIgnoreCase("§aSetar NPCs §7(Esquerdo: Altere o tipo/Direito: Loja/Direito+Shift: Melhorias)")) {
+      evt.setCancelled(true);
+    }
+    else if (displayName.startsWith("§aConfigurando o time: ")) {
+      evt.setCancelled(true);
+    }
   }
 }

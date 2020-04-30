@@ -138,14 +138,15 @@ public class ArenaPlayer {
   }
 
   public enum CurrentState {
-    IN_GAME("Em jogo", true),
-    DEAD("Eliminado"),
-    SPECTATING("Assitindo"),
-    RESPAWNING("Renascendo", true);
+    IN_GAME("Em jogo", true,false),
+    DEAD("Eliminado",false, true),
+    SPECTATING("Assitindo",false ,true),
+    RESPAWNING("Renascendo", true,true);
 
     private String name;
 
-    private boolean isInGame = false;
+    private boolean isSpectating;
+    private boolean isInGame;
 
     CurrentState(String name) {
       this.name = name;
@@ -155,14 +156,23 @@ public class ArenaPlayer {
       this.name = name;
       this.isInGame = isInGame;
     }
+    CurrentState(String name, boolean isInGame, boolean isSpectating) {
+      this.name = name;
+      this.isInGame = isInGame;
+      this.isSpectating=isSpectating;
 
-    @Override
+    }
+
     public String toString() {
       return this.name;
     }
 
     public boolean isInGame() {
       return this.isInGame;
+    }
+
+    public boolean isSpectating() {
+      return isSpectating;
     }
   }
 }

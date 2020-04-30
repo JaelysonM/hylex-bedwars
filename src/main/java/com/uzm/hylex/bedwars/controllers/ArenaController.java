@@ -58,11 +58,14 @@ public class ArenaController {
     }
 
     public static void loadArenas() {
-        for (File file : Objects.requireNonNull(new File(Core.getInstance().getDataFolder(), "arenas/").listFiles())) {
-            if (file.isFile() && file.getName().endsWith((".yml"))) {
-                loadArena(file.getName().replace(".yml", ""));
+        if (new File(Core.getInstance().getDataFolder(), "arenas/").exists()) {
+            for (File file : Objects.requireNonNull(new File(getInstance().getDataFolder(), "arenas/").listFiles())) {
+                if (file.isFile() && file.getName().endsWith((".yml"))) {
+                    loadArena(file.getName().replace(".yml", ""));
+                }
             }
         }
+
     }
 
     public static void saveArena(Arena interfaceArena) {

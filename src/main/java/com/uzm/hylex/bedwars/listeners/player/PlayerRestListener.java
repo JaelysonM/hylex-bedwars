@@ -15,9 +15,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 
 import static com.uzm.hylex.bedwars.arena.enums.ArenaEnums.ArenaState.IN_GAME;
@@ -56,22 +54,6 @@ public class PlayerRestListener implements Listener {
               .getType().name().contains("_AXE") || item.getType().name().contains("SHEARS") || item.getType().name().contains("COMPASS")) {
               evt.setCancelled(true);
             }
-          }
-        }
-      }
-    }
-  }
-
-  @EventHandler
-  public void onPlayerPickupItem(PlayerPickupItemEvent evt) {
-    HylexPlayer hp = HylexPlayer.get(evt.getPlayer());
-    if (hp != null) {
-      ArenaPlayer ap = hp.getArenaPlayer();
-      if (ap != null) {
-        Arena arena = ap.getArena();
-        if (arena != null) {
-          if (arena.getState() != IN_GAME || ap.getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
-            evt.setCancelled(true);
           }
         }
       }
@@ -147,5 +129,27 @@ public class PlayerRestListener implements Listener {
         }
       }
     }
+  }
+
+  @EventHandler
+  public void onPlayerSleep(PlayerBedEnterEvent evt) {
+    evt.setCancelled(true);
+  }
+
+  @EventHandler
+  public void onPlayerBucketEmpty(PlayerBucketEmptyEvent evt) {
+    Player player = evt.getPlayer();
+    HylexPlayer hp = HylexPlayer.get(player);
+    if (hp != null) {
+      ArenaPlayer ap = hp.getArenaPlayer();
+      if (ap != null) {
+        if (ap.getArena() != null) {
+          if (evt.getBucket() == Material.LAVA_BUCKET) {
+            evt.setCancelled(true);
+          }
+        }
+      }
+    }
+
   }
 }

@@ -1,5 +1,6 @@
 package com.uzm.hylex.bedwars.arena.team;
 
+import com.uzm.hylex.bedwars.arena.Arena;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
 
@@ -59,7 +60,7 @@ public enum Teams {
     return null;
   }
 
-  public Teams next() {
-    return (TEAMS.indexOf(this) + 1) == TEAMS.size() ? RED : TEAMS.get((TEAMS.indexOf(this) + 1));
+  public Teams next(Arena arena) {
+    return (TEAMS.indexOf(this) + 1) == arena.getConfiguration().getIslands() ? RED : TEAMS.get((TEAMS.indexOf(this) + 1));
   }
 }

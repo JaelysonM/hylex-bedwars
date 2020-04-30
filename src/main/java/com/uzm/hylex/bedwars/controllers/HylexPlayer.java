@@ -44,6 +44,8 @@ public class HylexPlayer {
     this.player = player;
 
     this.group = Group.getPlayerGroup(player);
+
+    setArenaPlayer(new ArenaPlayer(player,null));
   }
 
   public void destroy() {

@@ -42,7 +42,7 @@ public class TeamsMenu extends PageablePlayerInventory {
         super(viewer, Bukkit.createInventory(null, 36, "§7Configure os times"), "§7Configure os times");
         HylexPlayer hp = HylexPlayer.get(getPlayer());
         if (hp != null && hp.getAbstractArena() != null) {
-            config(new ItemStack(Material.AIR),
+            config(
                     new int[]{11, 12, 13, 14, 15, 21, 22, 23});
             List<ItemStack> items = Lists.newArrayList();
 
@@ -73,8 +73,8 @@ public class TeamsMenu extends PageablePlayerInventory {
                     new Object[][]{{BukkitUtils.putProfileOnSkull(BACK, new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§bVoltar")
                             .build()), 0},
                     }, new Object[]{22,
-                            new ItemStack(Material.AIR)},
-                    30);
+                            new ItemStack(Material.AIR)}
+                    );
             open(getPlayer(), 1);
         }
 

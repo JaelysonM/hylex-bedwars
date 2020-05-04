@@ -3,9 +3,9 @@ package com.uzm.hylex.bedwars.controllers;
 import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.proxy.ServerItem;
-import com.uzm.hylex.bedwars.utils.ProxyUtils;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.api.interfaces.Enums;
+import com.uzm.hylex.core.utils.ProxyUtils;
 import com.uzm.hylex.services.lan.WebSocket;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -112,7 +112,7 @@ public class MatchmakingController {
               if (hp != null) {
                 if (!mega.equalsIgnoreCase(com.uzm.hylex.core.Core.SOCKET_NAME.replace("bedwars-", ""))) {
                   target.sendMessage(matchFound ? "§8Sendo enviado para " + mini + "..." : "§cNão existe partidas disponíveis no momento para o modo de jogo selecionado.");
-                  ProxyUtils.connect(hp, mega);
+                  if (matchFound)  ProxyUtils.connect(hp, mega);
                 } else {
                   hp.getPlayer().getInventory().setItem(1, null);
                   hp.getPlayer().getActivePotionEffects().forEach(effect -> hp.getPlayer().removePotionEffect(effect.getType()));

@@ -3,6 +3,8 @@ package com.uzm.hylex.bedwars.loaders;
 import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.shop.Shop;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
+import com.uzm.hylex.bedwars.controllers.MatchmakingController;
+import com.uzm.hylex.bedwars.proxy.ServerItem;
 import com.uzm.hylex.core.java.util.ConfigurationCreator;
 import com.uzm.hylex.core.java.util.JavaReflections;
 import org.bukkit.Bukkit;
@@ -17,25 +19,27 @@ import java.util.List;
 public class PluginLoader {
 
   private PluginManager pm = Bukkit.getServer().getPluginManager();
-  private String serverName;
   private Core core;
 
   public PluginLoader(Core core) {
     this.core = core;
     loadConfigurations();
-    serverName = "mega1A";
-    new ServicesLoader(this);
+
     this.registerCommands();
     this.registerListeners();
 
     Shop.setupShop();
-    ArenaController.loadArenas();
-  }
+    UpgradesLoader.setupUpgrades();
 
+    ArenaController.loadArenas();
+
+    MatchmakingController.setupMatchmaking();
+
+    ServerItem.setupServers();
+  }
 
   public void loadConfigurations() {
     new ConfigurationCreator(core, "upgrades", "");
-    new ConfigurationCreator(core, "setup", "");
     new ConfigurationCreator(core, "itemshop", "");
   }
 
@@ -80,12 +84,7 @@ public class PluginLoader {
     Bukkit.getConsoleSender().sendMessage("§b[Hylex - BedWars] §7We're registered §f(" + registered + "/" + classes.size() + ") §7listeners.");
   }
 
-  public String getServerName() {
-    return serverName;
-  }
-
   public Core getCore() {
     return core;
   }
-
 }

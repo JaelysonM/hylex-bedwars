@@ -3,21 +3,17 @@ package com.uzm.hylex.bedwars.arena.creator.inventory;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import com.uzm.hylex.bedwars.Core;
+import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
-import com.uzm.hylex.bedwars.controllers.HylexPlayer;
-import com.uzm.hylex.bedwars.utils.BukkitUtils;
-import com.uzm.hylex.core.java.util.FilesSize;
+import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.spigot.inventories.PageablePlayerInventory;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
+import com.uzm.hylex.core.utils.BukkitUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
@@ -40,22 +36,90 @@ public class ArenasMenu extends PageablePlayerInventory {
   }
 
   public ArenasMenu(Player viewer) {
-    super(viewer, Bukkit.createInventory(null, 45, "§7Arenas do " + Core.getLoader().getServerName()), "§7Arenas do " + Core.getLoader().getServerName());
-    // TODO Menu de arenas com stado e informações
+    super(viewer, Bukkit.createInventory(null, 45, "§7Arenas do " + com.uzm.hylex.core.Core.SOCKET_NAME.replace("bedwars-", "")),
+      "§7Arenas do " + com.uzm.hylex.core.Core.SOCKET_NAME.replace("bedwars-", ""));
 
+    config(new int[] {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25});
 
+    List<ItemStack> items = Lists.newArrayList();
 
+    for (Arena arenas : ArenaController.getArenas().values()) {
+      String value = "";
+      switch (arenas.getState()) {
+        case IN_GAME:
+          value =
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzY0MTY4MmY0MzYwNmM1YzlhZDI2YmM3ZWE4YTMwZWU0NzU0N2M5ZGZkM2M2Y2RhNDllMWMxYTI4MTZjZjBiYSJ9fX0=";
+          break;
+        case END:
+          value =
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNWZkZTNiZmNlMmQ4Y2I3MjRkZTg1NTZlNWVjMjFiN2YxNWY1ODQ2ODRhYjc4NTIxNGFkZDE2NGJlNzYyNGIifX19=";
+          break;
+        case PREPARE:
+          value =
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMmM0ODg2ZWYzNjJiMmM4MjNhNmFhNjUyNDFjNWM3ZGU3MWM5NGQ4ZWM1ODIyYzUxZTk2OTc2NjQxZjUzZWEzNSJ9fX0==";
+          break;
+        case IN_WAITING:
+          value =
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjhmZmYyMmM2ZTY1NDZkMGQ4ZWI3Zjk3NjMzOTg0MDdkZDJhYjgwZjc0ZmUzZDE2YjEwYTk4M2VjYWYzNDdlIn19fQ====";
+          break;
+        case STARTING:
+          value =
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjJkMTQ1YzkzZTVlYWM0OGE2NjFjNmYyN2ZkYWZmNTkyMmNmNDMzZGQ2MjdiZjIzZWVjMzc4Yjk5NTYxOTcifX19====";
+          break;
+      }
+      ItemStack stack = BukkitUtils.putProfileOnSkull(value, new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§e" + arenas.getArenaName())
+        .lore("", " §eInformações da arena:", "", "  §a★ §7Estado atual: §e" + arenas.getState().toString(),
+          "  §e★ §7Estado de evento atual: §e" + arenas.getUpgradeState().toString(),
+          "  §e● §7Jogadores: §a" + arenas.getArenaPlayers().size() + "/" + arenas.getConfiguration().getMaxPlayers(),
+          "  §e→ §7Número de ilhas: §a" + arenas.getConfiguration().getIslands(), "  §e→ §7Modo: §b" + arenas.getConfiguration().getMode(),
+          "  §e→ §7Nome do mapa: §b" + arenas.getWorldName(), "", "§e* Clique esquerdo para entrar", "§e* Clique direito para configurar").build());
+      items.add(stack);
+      attachObject(stack, arenas.getArenaName());
+    }
+
+    fill(items.toArray(new ItemStack[] {}), new Object[][] {{42, BukkitUtils.putProfileOnSkull(
+      "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzE2MmQ0MmY0ZGJhMzU0ODhmNGY2NmQ2NzM2MzViZmM1NjE5YmRkNTEzZDAyYjRjYzc0ZjA1ZWM4ZTk1NiJ9fX0=",
+      new ItemBuilder(Material.SKULL_ITEM).name("§9Página anterior").durability(3).build())}, {43, BukkitUtils.putProfileOnSkull(
+      "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjgxMzYzM2JkNjAxNTJkOWRmNTRiM2Q5ZDU3M2E4YmMzNjU0OGI3MmRjMWEzMGZiNGNiOWVjMjU2ZDY4YWUifX19",
+      new ItemBuilder(Material.SKULL_ITEM).name("§9Próxima página").durability(3).build())}}, new Object[][] {},
+      new Object[] {22, new ItemBuilder(Material.STAINED_GLASS_PANE).durability(14).name("§cNão encontramos nenhuma arena!").build()});
+
+    this.open(viewer, 1);
   }
 
-  public void click(Inventory inv, ItemStack item, int slot) {
+  public void click(InventoryClickEvent evt) {
+    ItemStack item = evt.getCurrentItem();
     if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§9Página anterior")) {
       open(getPlayer(), getCurrent() - 1);
     } else if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§9Próxima página")) {
       open(getPlayer(), getCurrent() + 1);
+    } else {
+      HylexPlayer hp = HylexPlayer.getByPlayer(getPlayer());
+      if (hp != null) {
+        if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§e")) {
+          if (getAttached(item) != null) {
+            if (evt.isLeftClick()) {
+              evt.getWhoClicked().closeInventory();
+              Arena arena = ArenaController.getArena((String) getAttached(item));
+              if (hp.getArenaPlayer() != null && arena.equals(hp.getArenaPlayer().getArena())) {
+                hp.getPlayer().sendMessage("§cVocê já esta nesse arena.");
+                return;
+              }
+
+              if (hp.getArenaPlayer() != null) {
+                hp.getArenaPlayer().getArena().leave(hp);
+              }
+
+              hp.getPlayer().sendMessage("§8Sendo enviado para " + arena.getArenaName() + "...");
+              arena.join(hp);
+            } else if (evt.isRightClick()) {
+              Arena arena = ArenaController.getArena((String) getAttached(item));
+              new MainPainel(getPlayer(), arena);
+            }
+          }
+        }
+      }
     }
-
-    // TODO Menu de arenas com stado e informações
-
   }
 
 
@@ -68,7 +132,7 @@ public class ArenasMenu extends PageablePlayerInventory {
       Player player = (Player) evt.getWhoClicked();
       player.updateInventory();
       if (item != null && item.hasItemMeta() && player.equals(getPlayer())) {
-        click(evt.getInventory(), item, evt.getSlot());
+        click(evt);
       }
     }
   }

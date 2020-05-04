@@ -61,7 +61,8 @@ public class Generator {
   public void enable() {
     this.disable();
     this.block = NMS.createGeneratorEntity(this);
-    this.hologram = HologramLibrary.createHologram(location, "§aSpawnando em §c" + this.countdown + " §asegundos", this.type.getName(), "§aNível " + StringUtils.repeat("I", 1));
+    this.hologram = HologramLibrary
+      .createHologram(location.clone().add(0, 2.4, 0), "§eSpawnando em §c" + this.countdown + " §esegundos", this.type.getName(), "§eNível §c" + StringUtils.repeat("I", 1));
   }
 
   public void disable() {
@@ -79,18 +80,17 @@ public class Generator {
   public void tick() {
     ArmorStand armorStand = this.block.getEntity();
     Location location = armorStand.getLocation();
+    location.setYaw((location.getYaw() + 7.5F));
     if (!this.floatLoop) {
       location.add(0, 0.01, 0);
-      location.setYaw((location.getYaw() + 7.5F));
 
-      if (armorStand.getLocation().getY() > (0.25 + (this.location.getY() + 2.4))) {
+      if (armorStand.getLocation().getY() > (0.25 + (this.location.getY() + 1.5))) {
         this.floatLoop = true;
       }
     } else {
       location.subtract(0, 0.01, 0);
-      location.setYaw((location.getYaw() - 7.5F));
 
-      if (armorStand.getLocation().getY() < (-0.25 + (this.location.getY() + 2.4))) {
+      if (armorStand.getLocation().getY() < (-0.25 + (this.location.getY() + 1.5))) {
         this.floatLoop = false;
       }
     }
@@ -99,8 +99,6 @@ public class Generator {
 
     if (this.tick == 20) {
       this.tick = 0;
-      this.hologram.updateLine(1, "§aSpawnando em §c" + getDelay() + " §asegundos");
-      this.hologram.updateLine(3, "§aNível " + StringUtils.repeat("I", getTier()));
       if (this.countdown == 0) {
         if (Utils.getAmountOfItem(this.type.getItem(), this.location) < 4) {
           Item item = this.location.getWorld().dropItem(this.location, new ItemStack(this.type.getItem()));
@@ -108,8 +106,12 @@ public class Generator {
           item.setVelocity(new Vector());
         }
         this.countdown = type == DIAMOND ? arena.getUpgradeState().getDiamondDelay() : arena.getUpgradeState().getEmeraldDelay();
+        this.hologram.updateLine(1, "§eSpawnando em §c" + getDelay() + " §esegundos");
+        this.hologram.updateLine(3, "§eNível §c" + StringUtils.repeat("I", getTier()));
+        return;
       }
-
+      this.hologram.updateLine(1, "§eSpawnando em §c" + countdown + " §esegundos");
+      this.hologram.updateLine(3, "§eNível §c" + StringUtils.repeat("I", getTier()));
       this.countdown--;
       return;
     }

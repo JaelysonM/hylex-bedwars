@@ -10,55 +10,56 @@ import java.util.regex.Pattern;
 public class Upgrades {
 
   private Pattern pattern = Pattern.compile("([<])([0-9])([>])");
+  private Pattern patternTier = Pattern.compile("([{])([0-9])([}])");
 
-  private Pattern patternTier = Pattern.compile("([{])([r0-9])([}])");
-
-
-  private String name;
+  private UpgradeType type;
   private List<String> description;
-  private Integer[] price = new Integer[300];
+  private List<Integer> prices;
   private BuyEnums coinTrade;
 
-  public Upgrades(String name) {
-    this.name = name;
+  public Upgrades(UpgradeType type) {
+    this.type = type;
   }
 
   public void setDescription(List<String> description) {
-    description.replaceAll(result -> {
+    this.description = description;
+    this.description.replaceAll(result -> {
+      result = result.replace("&", "§");
       Matcher matcher = pattern.matcher(result);
-      return matcher.find() ? result.replace("&", "§").replace(matcher.group(), String.valueOf(price[Integer.parseInt(matcher.group(2))])) : result.replace("&", "§");
+      if (matcher.find()) {
+        int index = Integer.parseInt(matcher.group(2)) - 1;
+        int value = index < prices.size() ? prices.get(index) : 0;
+        result = result.replace("&", "§").replace(matcher.group(), String.valueOf(value));
+      }
+
+      return result;
     });
   }
 
-  public void setPrices(int tier, int price) {
-    this.price[tier] = price;
+  public void setPrices(List<Integer> prices) {
+    this.prices = prices;
   }
 
-  public List<String> getDescription() {
-    return description;
+  public UpgradeType getType() {
+    return this.type;
   }
 
-  public List<String> getUpdatableDescription(int currentTier) {
-    List<String> updatable = new ArrayList<>(description);
-
+  public List<String> getUpdatableDescription(int currentTier, boolean canBuy) {
+    List<String> updatable = new ArrayList<>(this.description);
     updatable.replaceAll(result -> {
       Matcher matcher = patternTier.matcher(result);
-      return matcher.find() ? result.replace(matcher.group(), currentTier >= Integer.parseInt(matcher.group(2)) ? "§8§m" : "§a") : result;
+      return matcher.find() ? result.replace(matcher.group(), currentTier >= Integer.parseInt(matcher.group(2)) ? "§m" : canBuy ? "" : "") : result;
     });
     return updatable;
   }
 
-  public String getName() {
-    return name;
-  }
 
   public int getPrice(int tier) {
-    return price[tier];
+    return this.prices.get(tier - 1);
   }
 
-
   public int getMaxTier() {
-    return price.length;
+    return this.prices.size();
   }
 
   public void setCoinTrade(BuyEnums coinTrade) {

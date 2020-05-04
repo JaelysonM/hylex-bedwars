@@ -1,8 +1,10 @@
 package com.uzm.hylex.bedwars.arena.player;
 
 import com.uzm.hylex.bedwars.arena.shop.ShopItem;
-import com.uzm.hylex.bedwars.utils.BukkitUtils;
+import com.uzm.hylex.bedwars.arena.team.Teams;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
+import com.uzm.hylex.core.utils.BukkitUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
@@ -28,7 +30,7 @@ public class ArenaEquipment {
   private ItemStack leggings;
   private ItemStack boots;
   private ItemStack compass;
-  private String tracking;
+  private Teams tracking;
   private short colorId;
 
   private List<ShopItem> shopItems = new ArrayList<>();
@@ -38,12 +40,11 @@ public class ArenaEquipment {
     this.player = ap.getPlayer();
     this.colorId = ap.getTeam().getTeamType().getColor().getWoolData();
     this.sword = new ItemStack(WOOD_SWORD);
-    this.helmet = new ItemBuilder("LEATHER_HELMET : 1").color(ap.getTeam().getTeamType().getColor().getColor()).build();
-    this.chestplate = new ItemBuilder("LEATHER_CHESTPLATE : 1").color(ap.getTeam().getTeamType().getColor().getColor()).build();
-    this.leggings = new ItemBuilder("LEATHER_LEGGINGS : 1").color(ap.getTeam().getTeamType().getColor().getColor()).build();
-    this.boots = new ItemBuilder("LEATHER_BOOTS : 1").color(ap.getTeam().getTeamType().getColor().getColor()).build();
+    this.helmet = new ItemBuilder("LEATHER_HELMET : 1").color(ap.getTeam().getTeamType().getColorRGB()).build();
+    this.chestplate = new ItemBuilder("LEATHER_CHESTPLATE : 1").color(ap.getTeam().getTeamType().getColorRGB()).build();
+    this.leggings = new ItemBuilder("LEATHER_LEGGINGS : 1").color(ap.getTeam().getTeamType().getColorRGB()).build();
+    this.boots = new ItemBuilder("LEATHER_BOOTS : 1").color(ap.getTeam().getTeamType().getColorRGB()).build();
     this.compass = new ItemBuilder("COMPASS : 1 : display=§aRastreador").build();
-    this.tracking = "";
   }
 
   public void destroy() {
@@ -100,7 +101,7 @@ public class ArenaEquipment {
     return refreshUpgrades;
   }
 
-  public void setTracking(String tracking) {
+  public void setTracking(Teams tracking) {
     this.tracking = tracking;
   }
 
@@ -113,11 +114,14 @@ public class ArenaEquipment {
   }
 
   public void refresh() {
+    this.player.getInventory().clear();
+    this.player.getInventory().setArmorContents(new ItemStack[4]);
+
     List<ShopItem> toRemove = this.shopItems.stream().filter(ShopItem::lostOnDie).collect(Collectors.toList());
     this.shopItems.removeAll(toRemove);
     toRemove.clear();
 
-    this.deaths++;
+    this.tracking = null;
     this.player.getInventory().setItem(0, this.sword);
     if (this.bow != null) {
       this.player.getInventory().setItem(1, this.bow);
@@ -138,16 +142,21 @@ public class ArenaEquipment {
       removeTier(item);
 
       item.getContent(getTier(item)).forEach(is -> {
-        if (is.getType().name().contains("WOOL") || is.getType().name().contains("STAINED_CLAY") || is.getType().name().contains("STAINED_GLASS")) {
-          ItemStack clone = is.clone();
-          clone.setDurability(colorId);
-          player.getInventory().addItem(clone);
-          return;
-        }
+        if (!is.getType().name().contains("SWORD") && !is.getType().name().contains("HELMET") && !is.getType().name().contains("CHESTPLATE") && !is.getType().name()
+          .contains("LEGGINGS") && !is.getType().name().contains("BOOTS") && !is.getType().name().contains("BOW") && !is.getType().name().contains("AXE")) {
+          if (is.getType().name().contains("WOOL") || is.getType().name().contains("STAINED_CLAY") || is.getType().name().contains("STAINED_GLASS")) {
+            ItemStack clone = is.clone();
+            clone.setDurability(colorId);
+            this.player.getInventory().addItem(clone);
+            return;
+          }
 
-        player.getInventory().addItem(is);
+          this.player.getInventory().addItem(is);
+        }
       });
     }
+
+    this.player.updateInventory();
   }
 
   public void addItem(ShopItem item) {
@@ -248,7 +257,7 @@ public class ArenaEquipment {
     return this.tiers.getOrDefault(item, 0);
   }
 
-  public String getTracking() {
+  public Teams getTracking() {
     return this.tracking;
   }
 

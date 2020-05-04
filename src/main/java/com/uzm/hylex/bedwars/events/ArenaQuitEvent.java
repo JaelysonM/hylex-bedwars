@@ -2,12 +2,10 @@ package com.uzm.hylex.bedwars.events;
 
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
-import com.uzm.hylex.bedwars.controllers.HylexPlayer;
+import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-
-
 
 public class ArenaQuitEvent extends Event implements Cancellable {
 
@@ -18,11 +16,10 @@ public class ArenaQuitEvent extends Event implements Cancellable {
 
   private static final HandlerList handlers = new HandlerList();
 
-
-
-  public ArenaQuitEvent(HylexPlayer player , Arena arena) {
-    this.hp=player;
-    this.arena=arena;
+  public ArenaQuitEvent(HylexPlayer player, Arena arena) {
+    this.hp = player;
+    this.ap = (ArenaPlayer) hp.getArenaPlayer();
+    this.arena = arena;
   }
 
   public HandlerList getHandlers() {

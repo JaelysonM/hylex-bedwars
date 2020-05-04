@@ -1,7 +1,8 @@
 package com.uzm.hylex.bedwars.listeners.creator;
 
+import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.creator.inventory.MainPainel;
-import com.uzm.hylex.bedwars.controllers.HylexPlayer;
+import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -45,11 +46,12 @@ public class OtherListeners implements Listener {
 
   @EventHandler
   public void onPlayerChangedWorld(PlayerChangedWorldEvent e) {
-    HylexPlayer hp = HylexPlayer.get(e.getPlayer());
-
-    if (hp != null && hp.getAux()) {
-      new MainPainel(e.getPlayer(), hp.getAbstractArena());
-      hp.setAux(false);
+    HylexPlayer hp = HylexPlayer.getByPlayer(e.getPlayer());
+    if (hp.getAuxiler() instanceof Boolean) {
+      if ((boolean) hp.getAuxiler()) {
+        new MainPainel(e.getPlayer(), (Arena) hp.getAbstractArena());
+        hp.setAuxiler(false);
+      }
     }
   }
 
@@ -65,23 +67,17 @@ public class OtherListeners implements Listener {
       evt.setCancelled(true);
     } else if (displayName.equalsIgnoreCase("§aSalvar alterações")) {
       evt.setCancelled(true);
-    }
-    else if (displayName.equalsIgnoreCase("§aSetar > §8Local de espera  §7(Clique para alterar)")) {
+    } else if (displayName.equalsIgnoreCase("§aSetar > §8Local de espera  §7(Clique para alterar)")) {
       evt.setCancelled(true);
-    }
-    else if (displayName.equalsIgnoreCase("§aCriar um gerador §8(Tipo definido de acordo com o bloco clicado)")) {
+    } else if (displayName.equalsIgnoreCase("§aCriar um gerador §8(Tipo definido de acordo com o bloco clicado)")) {
       evt.setCancelled(true);
-    }
-    else if (displayName.equalsIgnoreCase("§aSetar posições da borda da ilha §7(Esquerdo: Localização #1/Direito: Localização #2)")) {
+    } else if (displayName.equalsIgnoreCase("§aSetar posições da borda da ilha §7(Esquerdo: Localização #1/Direito: Localização #2)")) {
       evt.setCancelled(true);
-    }
-    else if (displayName.equalsIgnoreCase("§eAdicionar gerador do time")) {
+    } else if (displayName.equalsIgnoreCase("§eAdicionar gerador do time")) {
       evt.setCancelled(true);
-    }
-    else if (displayName.equalsIgnoreCase("§aSetar NPCs §7(Esquerdo: Altere o tipo/Direito: Loja/Direito+Shift: Melhorias)")) {
+    } else if (displayName.equalsIgnoreCase("§aSetar NPCs §7(Esquerdo: Altere o tipo/Direito: Loja/Direito+Shift: Melhorias)")) {
       evt.setCancelled(true);
-    }
-    else if (displayName.startsWith("§aConfigurando o time: ")) {
+    } else if (displayName.startsWith("§aConfigurando o time: ")) {
       evt.setCancelled(true);
     }
   }

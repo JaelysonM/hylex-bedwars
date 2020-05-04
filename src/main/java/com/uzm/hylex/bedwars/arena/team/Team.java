@@ -1,24 +1,33 @@
 package com.uzm.hylex.bedwars.arena.team;
 
+import com.google.common.collect.ImmutableList;
 import com.uzm.hylex.bedwars.arena.improvements.Trap;
 import com.uzm.hylex.bedwars.arena.improvements.UpgradeType;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
-import com.uzm.hylex.bedwars.controllers.HylexPlayer;
-import com.uzm.hylex.bedwars.utils.BukkitUtils;
 import com.uzm.hylex.bedwars.utils.CubeId;
 import com.uzm.hylex.bedwars.utils.Utils;
+import com.uzm.hylex.core.api.Group;
+import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.libraries.holograms.HologramLibrary;
 import com.uzm.hylex.core.libraries.holograms.api.Hologram;
+import com.uzm.hylex.core.libraries.npclib.NPCLibrary;
+import com.uzm.hylex.core.libraries.npclib.api.NPC;
+import com.uzm.hylex.core.utils.BukkitUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static com.uzm.hylex.bedwars.arena.improvements.UpgradeType.HEAL_POOL;
 
 public class Team {
 
@@ -33,6 +42,8 @@ public class Team {
 
   private CubeId border;
 
+  private NPC npcShop;
+  private NPC npcUpgrades;
   private Hologram hologramShop;
   private Hologram hologramUpgrades;
 
@@ -40,7 +51,7 @@ public class Team {
   private List<Trap> traps = new ArrayList<>();
   private Map<UpgradeType, Integer> upgrades = new HashMap<>();
 
-  private double iron = 1.5D;
+  private double iron = 1.0D;
   private double gold = 6.0D;
   private double emerald = 0.7;
 
@@ -50,7 +61,7 @@ public class Team {
 
   public enum Sitation {
     WAITING,
-    STADING,
+    STANDING,
     BROKEN_BED,
     ELIMINATED
   }
@@ -60,14 +71,40 @@ public class Team {
     setSitation(Sitation.WAITING);
   }
 
+  public void breakBed() {
+    this.setSitation(Sitation.BROKEN_BED);
+    BukkitUtils.getBedNeighbor(this.bedLocation.getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    this.bedLocation.getBlock().breakNaturally(new ItemStack(Material.AIR));
+    this.alive.forEach(ap -> {
+      HylexPlayer hp = HylexPlayer.getByPlayer(ap.getPlayer());
+      if (hp != null) {
+        hp.getBedWarsStatistics().addLong("bedsLost", "global");
+        hp.getBedWarsStatistics().addLong("bedsLost", ap.getArena().getConfiguration().getMode().toLowerCase());
+      }
+    });
+  }
+
   public void setLastTrapped(Player player) {
-    this.lastTrapped = player;
     this.lastTrappedTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(90);
+    this.lastTrapped = player;
   }
 
   public void enableHolograms() {
-    this.hologramUpgrades = HologramLibrary.createHologram(getUpgradeLocation().add(0, 0.5, 0), true, "§e§lLOJA DE", "§e§lMELHORIAS");
-    this.hologramShop = HologramLibrary.createHologram(getUpgradeLocation().add(0, 0.5, 0), true, "§e§lLOJA DE", "§e§lITENS");
+    this.hologramShop = HologramLibrary.createHologram(getShopLocation().add(0, 0.5, 0), true, "§b§lCLIQUE DIREITO", "§e§lITENS", "§e§lLOJA DE");
+    this.npcShop = NPCLibrary.createNPC(EntityType.PLAYER, UUID.randomUUID().toString().replace("-", ""));
+    this.npcShop.data().set("SHOP", "item");
+    this.npcShop.data().set(NPC.GRAVITY, true);
+    this.npcShop.data().set(NPC.PROFILE_NPC_SKIN, true);
+    this.npcShop.data().set(NPC.HIDE_BY_TEAMS_KEY, true);
+    this.npcShop.spawn(getShopLocation());
+
+    this.hologramUpgrades = HologramLibrary.createHologram(getUpgradeLocation().add(0, 0.5, 0), true, "§b§lCLIQUE DIREITO", "§e§lMELHORIAS", "§e§lLOJA DE");
+    this.npcUpgrades = NPCLibrary.createNPC(EntityType.PLAYER, UUID.randomUUID().toString().replace("-", ""));
+    this.npcUpgrades.data().set("SHOP", "upgrade");
+    this.npcUpgrades.data().set(NPC.GRAVITY, true);
+    this.npcUpgrades.data().set(NPC.PROFILE_NPC_SKIN, true);
+    this.npcUpgrades.data().set(NPC.HIDE_BY_TEAMS_KEY, true);
+    this.npcUpgrades.spawn(getUpgradeLocation());
   }
 
   public void disableHolograms() {
@@ -78,6 +115,14 @@ public class Team {
     if (this.hologramUpgrades != null) {
       HologramLibrary.removeHologram(this.hologramUpgrades);
       this.hologramUpgrades = null;
+    }
+    if (this.npcShop != null) {
+      this.npcShop.destroy();
+      this.npcShop = null;
+    }
+    if (this.npcUpgrades != null) {
+      this.npcUpgrades.destroy();
+      this.npcUpgrades = null;
     }
   }
 
@@ -91,16 +136,8 @@ public class Team {
     disableHolograms();
   }
 
-  public void equip() {
-    this.alive.forEach(ArenaPlayer::equip);
-  }
-
-  public void refreshPlayers() {
-    this.alive.forEach(ArenaPlayer::refresh);
-  }
-
   public void evolve(UpgradeType upgrade) {
-    this.upgrades.put(upgrade, this.getTier(upgrade));
+    this.upgrades.put(upgrade, this.getTier(upgrade) + 1);
   }
 
   public void setSpawnLocation(Location location) {
@@ -136,7 +173,7 @@ public class Team {
   }
 
   public List<ArenaPlayer> getAlive() {
-    return alive;
+    return this.alive;
   }
 
   public Sitation getSitation() {
@@ -183,13 +220,17 @@ public class Team {
   }
 
   public boolean isBed(Block breakBlock) {
+    if (this.sitation == Sitation.BROKEN_BED) {
+      return false;
+    }
+
     Block teamBed = this.bedLocation.getBlock();
     Block neighbor = BukkitUtils.getBedNeighbor(teamBed);
     return neighbor.equals(breakBlock) || teamBed.equals(breakBlock);
   }
 
   public List<Trap> getTraps() {
-    return this.traps;
+    return ImmutableList.copyOf(this.traps);
   }
 
   public CubeId getBorder() {
@@ -198,8 +239,8 @@ public class Team {
 
   public void addMember(ArenaPlayer player, boolean notify) {
     if (notify) {
-      this.members.stream().map(ArenaPlayer::getPlayer).forEach(
-        result -> result.sendMessage("§7[§a!§7] " + HylexPlayer.Group.getColored(player.getPlayer()) + " §7entrou no seu time. (" + getTeamType().getDisplayName() + "§7)"));
+      this.members.stream().map(ArenaPlayer::getPlayer)
+        .forEach(result -> result.sendMessage("§7[§a!§7] " + Group.getColored(player.getPlayer()) + " §7entrou no seu time. (" + getTeamType().getDisplayName() + "§7)"));
     }
     if (!this.members.contains(player)) {
       this.members.add(player);
@@ -224,17 +265,22 @@ public class Team {
 
   private boolean tick;
 
-  public void tickGenerator() {
+  public void tick() {
+    if (this.hasUpgrade(HEAL_POOL)) {
+      this.alive.forEach(ap -> {
+        Player player = ap.getPlayer();
+        if (!player.hasPotionEffect(PotionEffectType.REGENERATION) && getBorder().contains(player.getLocation())) {
+          player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 0));
+        }
+      });
+    }
+
     this.tickGenerator(true);
   }
 
   private void tickGenerator(boolean upgrade) {
-    if (!getAlive().isEmpty()) {
-      return;
-    }
-
     if (this.iron == 0.0D) {
-      this.iron = 1.5D;
+      this.iron = 1.0D;
       for (Location locs : getTeamGenerators()) {
         if (Utils.getAmountOfItem(Material.IRON_INGOT, locs) >= 64) {
           break;

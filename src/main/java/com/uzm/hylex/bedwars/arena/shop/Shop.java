@@ -1,6 +1,7 @@
 package com.uzm.hylex.bedwars.arena.shop;
 
 import com.google.common.collect.ImmutableList;
+import com.uzm.hylex.bedwars.arena.improvements.Trap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ public class Shop {
     CATEGORIES.add(new ShopCategory("ranged"));
     CATEGORIES.add(new ShopCategory("potions"));
     CATEGORIES.add(new ShopCategory("utility"));
+    Trap.setupTraps();
   }
 
   public static int getCategoryId(ShopCategory search) {

@@ -14,7 +14,7 @@ import org.bukkit.entity.ArmorStand;
 
 public class EntityGenerator extends EntityArmorStand implements IArmorStand {
 
-  private static final FieldAccessor<Integer> BI = Accessors.getField(EntityArmorStand.class, "bi", Integer.class);
+  private static final FieldAccessor<Integer> BI = Accessors.getField(EntityArmorStand.class, "bi", int.class);
 
   private static double square(double num) {
     return num * num;
@@ -24,12 +24,13 @@ public class EntityGenerator extends EntityArmorStand implements IArmorStand {
 
   public EntityGenerator(Generator generator) {
     super(((CraftWorld) generator.getLocation().getWorld()).getHandle());
+    this.generator = generator;
 
     this.setArms(false);
     this.setBasePlate(true);
     this.setInvisible(true);
-    this.setGravity(false);
-    this.setSmall(true);
+    this.setGravity(true);
+    this.setSmall(false);
 
     a(new NullBoundingBox());
     BI.set(this, Integer.MAX_VALUE);

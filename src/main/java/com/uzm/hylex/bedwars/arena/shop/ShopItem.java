@@ -74,7 +74,7 @@ public class ShopItem {
     return tiers.size();
   }
 
-  static class ShopItemTier {
+  public static class ShopItemTier {
 
     private ItemStack price;
     private List<ItemStack> content;

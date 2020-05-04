@@ -15,7 +15,7 @@ public class ArenaConfiguration {
   }
 
   public String getMode() {
-    return this.teamsSize == 1 ? "SOLO" : this.teamsSize == 2 ? "DUPLA" : this.teamsSize == 3 ? "TRIO" : "SQUAD";
+    return this.teamsSize == 1 ? "Solo" : this.teamsSize == 2 ? "Dupla" : this.teamsSize == 3 ? "Trio" : "Squad";
   }
 
   public int getIslands() {
@@ -32,5 +32,21 @@ public class ArenaConfiguration {
 
   public int getMinPlayers() {
     return this.minPlayers;
+  }
+
+  public void setIslands(int islands) {
+    this.islands = islands;
+  }
+
+  public void setMaxPlayers(int maxPlayers) {
+    this.maxPlayers = maxPlayers;
+  }
+
+  public void setMinPlayers(int minPlayers) {
+    this.minPlayers = minPlayers;
+  }
+
+  public void setTeamsSize(int teamsSize) {
+    this.teamsSize = teamsSize;
   }
 }

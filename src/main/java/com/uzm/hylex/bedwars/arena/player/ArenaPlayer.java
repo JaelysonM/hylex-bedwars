@@ -1,18 +1,26 @@
 package com.uzm.hylex.bedwars.arena.player;
 
+import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.team.Team;
+import com.uzm.hylex.core.api.interfaces.IArenaPlayer;
+import com.uzm.hylex.core.controllers.TagController;
+import com.uzm.hylex.core.nms.NMS;
+import com.uzm.hylex.core.spigot.features.Titles;
+import com.uzm.hylex.core.spigot.items.ItemBuilder;
 import com.uzm.hylex.core.spigot.scoreboards.AsyncScoreboard;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import static com.uzm.hylex.bedwars.arena.improvements.UpgradeType.*;
 
-public class ArenaPlayer {
+public class ArenaPlayer implements IArenaPlayer {
 
   private Arena arena;
   private Player player;
@@ -24,6 +32,7 @@ public class ArenaPlayer {
   public ArenaPlayer(Player player, Arena arena) {
     this.arena = arena;
     this.player = player;
+    this.currentState = CurrentState.WAITING;
     this.setScoreboard(new AsyncScoreboard(player));
   }
 
@@ -37,6 +46,7 @@ public class ArenaPlayer {
     this.player = null;
     this.currentState = null;
     this.team = null;
+    this.scoreboard.delete();
     this.scoreboard = null;
     this.equipment = null;
   }
@@ -44,19 +54,79 @@ public class ArenaPlayer {
   public void update() {
     switch (getCurrentState()) {
       case DEAD:
-        if (getTeam() != null) {
-          // VOU RMORREU BLABLA
-          // ITENS PARA ESPECTAR
+        NMS.sendTitle(player, Titles.TitleType.BOTH, "§fVocê foi eliminado!", "§c§lDERROTA", 10, 60, 0);
+      case SPECTATING:
+        getArena().getArenaPlayers().stream().map(a -> (ArenaPlayer) a).forEach(ap -> {
+          Player players = ap.getPlayer();
+
+          player.showPlayer(players);
+          if (ap.getCurrentState().isInGame()) {
+            players.hidePlayer(player);
+          } else {
+            players.showPlayer(player);
+          }
+        });
+        org.bukkit.scoreboard.Team team = player.getScoreboard().getPlayerTeam(player);
+        if (team != null) {
+          team.unregister();
+          TagController.get(player).setTeam(null);
+        }
+        if (!Core.team.hasPlayer(player)) {
+          Core.team.addPlayer(player);
         }
 
-        break;
-      case SPECTATING:
-        ///APENAS ASSITINDO
+        player.setGameMode(GameMode.ADVENTURE);
+        player.setAllowFlight(true);
+
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0));
+
+        player.getInventory().clear();
+        player.getInventory().setArmorContents(new ItemStack[4]);
+
+        player.getInventory().setItem(1, new ItemBuilder(Material.PAPER).name("§bJogar Novamente").lore("§7Clique para se conectar a outra sala.").build());
+
+        player.getInventory().setItem(8, new ItemBuilder(Material.BED).name("§cVoltar ao Lobby").lore("§7Clique para voltar ao Lobby.").build());
+
+        player.updateInventory();
         break;
       case RESPAWNING:
-        ///START RESPAWN TASk
+        player.getInventory().clear();
+        player.getInventory().setArmorContents(new ItemStack[4]);
+
+        com.uzm.hylex.bedwars.nms.NMS.sendFakeSpectator(player);
+        new BukkitRunnable() {
+          int count = 5;
+
+          @Override
+          public void run() {
+            if (player == null) {
+              cancel();
+              return;
+            }
+
+            if (count == 0) {
+              cancel();
+              if (player.isOnline()) {
+                setCurrentState(CurrentState.IN_GAME);
+                update();
+                NMS.sendTitle(player, Titles.TitleType.BOTH, "", "", 0, 0, 0);
+                player.teleport(getTeam().getSpawnLocation());
+                getArena().getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(players -> players.showPlayer(player));
+              }
+              return;
+            }
+
+            if (player.isOnline()) {
+              NMS.sendTitle(player, Titles.TitleType.BOTH, "§fRespawnando em " + count + " segundo" + (count > 1 ? "s" : "") + "!", "§c§lVOCÊ MORREU", 0, 20, 0);
+            }
+
+            count--;
+          }
+        }.runTaskTimer(Core.getInstance(), 0, 20);
         break;
       case IN_GAME:
+        player.setGameMode(GameMode.SURVIVAL);
+        equip();
         refresh();
         break;
     }
@@ -138,10 +208,11 @@ public class ArenaPlayer {
   }
 
   public enum CurrentState {
-    IN_GAME("Em jogo", true,false),
-    DEAD("Eliminado",false, true),
-    SPECTATING("Assitindo",false ,true),
-    RESPAWNING("Renascendo", true,true);
+    WAITING("Aguardando", false, false),
+    IN_GAME("Em jogo", true, false),
+    RESPAWNING("Renascendo", true, true),
+    DEAD("Eliminado", false, true),
+    SPECTATING("Assitindo", false, true);
 
     private String name;
 
@@ -156,10 +227,11 @@ public class ArenaPlayer {
       this.name = name;
       this.isInGame = isInGame;
     }
+
     CurrentState(String name, boolean isInGame, boolean isSpectating) {
       this.name = name;
       this.isInGame = isInGame;
-      this.isSpectating=isSpectating;
+      this.isSpectating = isSpectating;
 
     }
 

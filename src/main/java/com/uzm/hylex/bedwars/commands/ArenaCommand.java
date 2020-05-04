@@ -2,9 +2,11 @@ package com.uzm.hylex.bedwars.commands;
 
 import com.google.common.collect.Lists;
 import com.uzm.hylex.bedwars.arena.Arena;
+import com.uzm.hylex.bedwars.arena.creator.inventory.ArenasMenu;
 import com.uzm.hylex.bedwars.arena.creator.inventory.MainPainel;
 import com.uzm.hylex.bedwars.arena.creator.inventory.WorldsMenu;
-import com.uzm.hylex.bedwars.controllers.HylexPlayer;
+import com.uzm.hylex.bedwars.controllers.ArenaController;
+import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,12 +22,13 @@ public class ArenaCommand implements CommandExecutor {
       return true;
     }
 
-    HylexPlayer hylex = HylexPlayer.get((Player) sender);
+    HylexPlayer hylex = HylexPlayer.getByPlayer((Player) sender);
     Player player = (Player) sender;
     if (!player.getPlayer().hasPermission("hylex.bedwars.setup")) {
       player.getPlayer().sendMessage("§b[Hylex] §cSem §c§npermissão §cpara executar esse comando.");
       return true;
     }
+
     if (label.equalsIgnoreCase("arena")) {
 
       switch (args.length) {
@@ -35,11 +38,16 @@ public class ArenaCommand implements CommandExecutor {
         case 1:
           switch (args[0].toLowerCase()) {
             case "list":
+              new ArenasMenu(player);
               break;
             case "configure":
               if (hylex.getAbstractArena() != null) {
-                new MainPainel(player, hylex.getAbstractArena());
-                new WorldsMenu(player);
+                if (((Arena) hylex.getAbstractArena()).getWorldName() != null) {
+                  new MainPainel(player, (Arena) hylex.getAbstractArena());
+                } else {
+                  new WorldsMenu(player);
+                }
+
               } else {
                 player.sendMessage("§6[ArenaCreator] §7Você já não está §cconfigurando §7uma arena §7digite §f/arena create <mini-name> §7para criar um arena");
               }
@@ -53,14 +61,21 @@ public class ArenaCommand implements CommandExecutor {
         case 2:
           switch (args[0].toLowerCase()) {
             case "create":
-              String mini = args[1];
               if (hylex.getAbstractArena() == null) {
-                hylex.setAbstractArena(new Arena(mini, true));
+                hylex.setAbstractArena(new Arena(args[1], true));
                 new WorldsMenu(player);
               } else {
                 player.sendMessage(
                   "§6[ArenaCreator] §7Você já está §ccriando §7uma arena digite §f/arena configure §7para voltar a configuraá-la ou §7clique no em '§cDeletar arena' §7no painel principal. §8(" + hylex
                     .getAbstractArena() + "§8)");
+              }
+              break;
+            case "edit":
+              if (ArenaController.getArena(args[1]) != null) {
+                hylex.setAbstractArena(ArenaController.getArena(args[1]));
+                new MainPainel(player, ArenaController.getArena(args[1]));
+              } else {
+                player.sendMessage("§6[ArenaCreator] §7Não existe uma arena-mini como o nome §c" + args[1]);
               }
               break;
             default:

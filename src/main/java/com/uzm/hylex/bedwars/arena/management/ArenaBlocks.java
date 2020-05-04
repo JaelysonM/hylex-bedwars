@@ -3,13 +3,14 @@ package com.uzm.hylex.bedwars.arena.management;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.generators.Generator;
 import com.uzm.hylex.bedwars.arena.team.Team;
+import com.uzm.hylex.bedwars.controllers.ArenaController;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.uzm.hylex.bedwars.arena.enums.ArenaEnums.ArenaState.END;
+import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.END;
 
 public class ArenaBlocks {
 
@@ -33,12 +34,13 @@ public class ArenaBlocks {
   }
 
   public void clearArena() {
-    this.arena.setState(END);
-
     this.placed.clear();
     this.arena.getGenerators().forEach(Generator::disable);
-    this.arena.getTeams().values().forEach(Team::resetTeam);
-    Bukkit.unloadWorld(this.arena.getWorldName(), false);
+    this.arena.listTeams().forEach(Team::resetTeam);
+    Bukkit.unloadWorld(this.arena.getArenaName(), false);
+    if (ArenaController.listArenas().stream().noneMatch(arena -> Bukkit.getWorld(this.arena.getArenaName()) != null)) {
+      Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "restart");
+    }
   }
 
   public Arena getArena() {

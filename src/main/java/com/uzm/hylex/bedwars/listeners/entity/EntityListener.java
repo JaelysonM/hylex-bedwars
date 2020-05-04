@@ -4,7 +4,7 @@ import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.arena.team.Team;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
-import com.uzm.hylex.bedwars.controllers.HylexPlayer;
+import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.Location;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
@@ -16,7 +16,7 @@ import org.bukkit.event.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
-import static com.uzm.hylex.bedwars.arena.enums.ArenaEnums.ArenaState.IN_GAME;
+import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.IN_GAME;
 
 public class EntityListener implements Listener {
 
@@ -30,21 +30,22 @@ public class EntityListener implements Listener {
       Player player = (Player) evt.getEntity();
 
       Arena arena = null;
-      HylexPlayer hp = HylexPlayer.get(player);
-      if (hp == null || hp.getArenaPlayer() == null || (arena = hp.getArenaPlayer().getArena()) == null || arena.getState() != IN_GAME || hp.getArenaPlayer().getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
+      HylexPlayer hp = HylexPlayer.getByPlayer(player);
+      if (hp == null || hp.getArenaPlayer() == null || (arena = (Arena) hp.getArenaPlayer().getArena()) == null || arena.getState() != IN_GAME || ((ArenaPlayer) hp
+        .getArenaPlayer()).getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
         evt.setCancelled(true);
         return;
       }
 
-      Team team = hp.getArenaPlayer().getTeam();
+      Team team = ((ArenaPlayer) hp.getArenaPlayer()).getTeam();
 
       Player damager = null;
       HylexPlayer hp2 = null;
       if (evt.getDamager() instanceof Player) {
         damager = (Player) evt.getDamager();
-        hp2 = HylexPlayer.get(damager);
-        if (hp2 == null || hp2.getArenaPlayer() == null || !hp2.getArenaPlayer().getArena().equals(arena) || hp2.getArenaPlayer().getCurrentState() != ArenaPlayer.CurrentState.IN_GAME
-          || (!damager.equals(player) && team != null && team.equals(hp2.getArenaPlayer().getTeam()))) {
+        hp2 = HylexPlayer.getByPlayer(damager);
+        if (hp2 == null || hp2.getArenaPlayer() == null || !hp2.getArenaPlayer().getArena().equals(arena) || ((ArenaPlayer) hp2.getArenaPlayer())
+          .getCurrentState() != ArenaPlayer.CurrentState.IN_GAME || (!damager.equals(player) && team != null && team.equals(((ArenaPlayer) hp2.getArenaPlayer()).getTeam()))) {
           evt.setCancelled(true);
           return;
         }
@@ -58,9 +59,9 @@ public class EntityListener implements Listener {
 
         if (proj.getShooter() instanceof Player) {
           damager = (Player) proj.getShooter();
-          hp2 = HylexPlayer.get(damager);
-          if (hp2 == null || hp2.getArenaPlayer() == null || !hp2.getArenaPlayer().getArena().equals(arena) || hp2.getArenaPlayer().getCurrentState() != ArenaPlayer.CurrentState.IN_GAME
-              || (!damager.equals(player) && team != null && team.equals(hp2.getArenaPlayer().getTeam()))) {
+          hp2 = HylexPlayer.getByPlayer(damager);
+          if (hp2 == null || hp2.getArenaPlayer() == null || !hp2.getArenaPlayer().getArena().equals(arena) || ((ArenaPlayer) hp2.getArenaPlayer())
+            .getCurrentState() != ArenaPlayer.CurrentState.IN_GAME || (!damager.equals(player) && team != null && team.equals(((ArenaPlayer) hp2.getArenaPlayer()).getTeam()))) {
             evt.setCancelled(true);
             return;
           }
@@ -68,14 +69,12 @@ public class EntityListener implements Listener {
       }
 
       if (damager != null) {
-        hp.setHit(damager);
+        hp.setLastHit(damager);
       }
-    }
-
-    else if (evt.getEntity() instanceof Fireball && evt.getDamager() instanceof Player) {
+    } else if (evt.getEntity() instanceof Fireball && evt.getDamager() instanceof Player) {
       Player damager = (Player) evt.getDamager();
-      HylexPlayer hp = HylexPlayer.get(damager);
-      if (hp == null || hp.getArenaPlayer() == null || hp.getArenaPlayer().getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
+      HylexPlayer hp = HylexPlayer.getByPlayer(damager);
+      if (hp == null || hp.getArenaPlayer() == null || ((ArenaPlayer) hp.getArenaPlayer()).getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
         evt.setCancelled(true);
       }
     }
@@ -86,9 +85,9 @@ public class EntityListener implements Listener {
     if (evt.getEntity() instanceof Player) {
       Player player = (Player) evt.getEntity();
 
-      HylexPlayer hp = HylexPlayer.get(player);
+      HylexPlayer hp = HylexPlayer.getByPlayer(player);
       if (hp != null) {
-        ArenaPlayer ap = hp.getArenaPlayer();
+        ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
         if (ap != null) {
           Arena arena = ap.getArena();
           if (arena == null) {
@@ -96,8 +95,14 @@ public class EntityListener implements Listener {
           } else {
             if (arena.getState() != IN_GAME) {
               evt.setCancelled(true);
+              if (evt.getCause() == DamageCause.VOID) {
+                player.teleport(arena.getWaitingLocation());
+              }
             } else if (ap.getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
               evt.setCancelled(true);
+              if (evt.getCause() == DamageCause.VOID) {
+                player.teleport(arena.getSpectatorLocation());
+              }
             } else if (evt.getCause() == DamageCause.VOID) {
               evt.setDamage(player.getMaxHealth());
             }

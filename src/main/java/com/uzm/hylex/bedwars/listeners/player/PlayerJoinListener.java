@@ -1,39 +1,64 @@
 package com.uzm.hylex.bedwars.listeners.player;
 
 import com.uzm.hylex.bedwars.Core;
+import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
-import com.uzm.hylex.bedwars.controllers.HylexPlayer;
-import com.uzm.hylex.core.controllers.TagController;
+import com.uzm.hylex.bedwars.controllers.HylexPlayerController;
+import com.uzm.hylex.bedwars.proxy.ServerItem;
+import com.uzm.hylex.core.api.HylexPlayer;
+import com.uzm.hylex.core.api.events.HylexPlayerLoadEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.event.player.PlayerLoginEvent;
+
+import static com.uzm.hylex.bedwars.controllers.MatchmakingController.MINI_QUEUE;
 
 public class PlayerJoinListener implements Listener {
 
-  @EventHandler(priority =  EventPriority.LOWEST)
-  public void onRegister(PlayerJoinEvent evt) {
-    evt.setJoinMessage(null);
+  @EventHandler
+  public void onHylexPlayerLoad(HylexPlayerLoadEvent evt) {
+    HylexPlayer hp = evt.getHylexPlayer();
 
-    Player player = evt.getPlayer();
-    HylexPlayer hp = HylexPlayer.create(player);
-    hp.setupPlayer();
-
-    if (player.hasPermission("hylex.staff") && hp.getGroup() == HylexPlayer.Group.HYLEX && ArenaController.getArenas().size() == 0) {
-      player.sendMessage("");
-      player.sendMessage("§e§l⚠ §aPercebemos que você é um §bHylex§a e não há nenhum 'Mini' criado nesse servidor.");
-      player.sendMessage("§7Digite /arena create <mininame> para criar um arena.");
-    }
-
-    new BukkitRunnable() {
-
-      public void run() {
-        hp.requestLoad();
+    Player player = hp.getPlayer();
+    if (MINI_QUEUE.containsKey(player.getName())) {
+      Arena arena = ArenaController.getArena(MINI_QUEUE.remove(player.getName()));
+      if (arena == null) {
+        ServerItem.getServerItem("lobby").connect(hp);
+        return;
       }
-    }.runTaskLaterAsynchronously(Core.getInstance(), 5L);
+
+      Bukkit.getScheduler().runTask(Core.getInstance(), () -> arena.join(hp));
+    } else {
+      for (Player players : Bukkit.getOnlinePlayers()) {
+        players.hidePlayer(player);
+      }
+    }
+  }
+
+  @EventHandler
+  public void onPlayerLogin(PlayerLoginEvent evt) {
+    HylexPlayer hp = HylexPlayer.create(evt.getPlayer());
+    hp.requestLoad("BedWarsData");
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void onPlayerLoginMonitor(PlayerLoginEvent evt) {
+    if (HylexPlayer.getByPlayer(evt.getPlayer()) == null) {
+      evt.disallow(PlayerLoginEvent.Result.KICK_OTHER,
+        " \n§cAparentemente o servidor não conseguiu carregar seu Perfil.\n \n§cIsso ocorre normalmente quando o servidor ainda está despreparado para receber logins, aguarde um pouco e tente novamente.");
+    }
+  }
+
+  @EventHandler
+  public void onPlayerJoin(PlayerJoinEvent evt) {
+    evt.setJoinMessage(null);
+    Player player = evt.getPlayer();
+    HylexPlayer hp = HylexPlayer.getByPlayer(player);
+    hp.setupPlayer();
+    HylexPlayerController.setupHotbar(hp);
   }
 }

@@ -2,10 +2,11 @@ package com.uzm.hylex.bedwars.arena;
 
 import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.enums.ArenaEnums;
-import com.uzm.hylex.bedwars.arena.generators.Generator;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.arena.team.Team;
 import com.uzm.hylex.bedwars.utils.Utils;
+import com.uzm.hylex.core.api.interfaces.IArenaPlayer;
+import com.uzm.hylex.core.nms.NMS;
 import com.uzm.hylex.core.spigot.features.Titles;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -13,14 +14,16 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.uzm.hylex.bedwars.arena.enums.ArenaEnums.ArenaState.*;
 import static com.uzm.hylex.bedwars.arena.team.Team.Sitation.BROKEN_BED;
 import static com.uzm.hylex.bedwars.arena.team.Team.Sitation.ELIMINATED;
+import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.*;
 
 public class ArenaTask {
 
@@ -31,6 +34,7 @@ public class ArenaTask {
 
   public ArenaTask(Arena arena) {
     this.arena = arena;
+    this.reset();
   }
 
   public Arena getArena() {
@@ -58,65 +62,123 @@ public class ArenaTask {
     return time;
   }
 
-  private final DateFormat DF = new SimpleDateFormat("mm:ss");
+  private static final DateFormat DF = new SimpleDateFormat("mm:ss");
+  private static final DecimalFormat TRACKING_FORMAT = new DecimalFormat("###.#");
 
   public void execute() {
     switch (getArena().getState()) {
       case END:
-        break;
-      case IN_GAME:
-        getArena().getTeams().values().forEach(Team::tickGenerator);
         List<String> lines = new ArrayList<>();
-        lines.add("      §8[" + getArena().getArenaName() + "]");
+        lines.add(" §8[BedWars - " + getArena().getArenaName() + "]");
         lines.add("");
-        lines.add(" " + getArena().getUpgradeState().getName() + " em §a" + DF.format(this.time * 1000) + "s");
+        lines.add(" Fim de jogo!");
         lines.add("");
-        getArena().getTeams().values().forEach(team -> lines.add(
-          " " + team.getTeamType().getScoreboardName() + " §f" + team.getTeamType().getName() + " " + (team.getSitation() == ELIMINATED ?
-            "§c§l✖" :
-            team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a§l✔")));
+        getArena().listTeams().forEach(team -> lines.add(
+          " " + team.getTeamType().getScoreboardName() + " §f" + team.getTeamType().getName() + ": " + (team.getSitation() == ELIMINATED ?
+            "§c✖" :
+            team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a✔")));
         lines.add("");
-        lines.add("       §bhylex.net");
-        getArena().getArenaPlayers().forEach(ap -> {
+        lines.add(" §bhylex.net");
+        getArena().getArenaPlayers().forEach(a -> {
+          ArenaPlayer ap = (ArenaPlayer) a;
           if (ap.getScoreboard() != null) {
             ap.getScoreboard().updateLines(lines.stream().map(result -> {
-              if (result.contains(ap.getTeam().getTeamType().getName()))
-                return result + "§e *";
+              if (ap.getTeam() != null && result.contains(ap.getTeam().getTeamType().getName())) {
+                return result + "§7 *";
+              }
+
               return result;
-
             }).collect(Collectors.toList()));
-
           }
         });
         lines.clear();
-        if (getArena().getUpgradeState().getSubMessage() != null && getTime() == 60 * 5) {
-          getArena().getArenaPlayers().forEach(ap -> ap.getPlayer().sendMessage(
+        break;
+      case IN_GAME:
+        getArena().listTeams().forEach(Team::tick);
+        new BukkitRunnable() {
+          @Override
+          public void run() {
+            List<String> lines = new ArrayList<>();
+            lines.add(" §8[BedWars - " + getArena().getArenaName() + "]");
+            lines.add("");
+            lines.add(" " + getArena().getUpgradeState().getName() + " em §a" + DF.format(time * 1000));
+            lines.add("");
+            getArena().listTeams().forEach(team -> lines.add(
+              " " + team.getTeamType().getScoreboardName() + " §f" + team.getTeamType().getName() + ": " + (team.getSitation() == ELIMINATED ?
+                "§c✖" :
+                team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a✔")));
+            lines.add("");
+            lines.add(" §bhylex.net");
+            getArena().getArenaPlayers().forEach(a -> {
+              ArenaPlayer ap = (ArenaPlayer) a;
+              Player player = ap.getPlayer();
+              if (ap.getScoreboard() != null) {
+                ap.getScoreboard().updateLines(lines.stream().map(result -> {
+                  if (ap.getTeam() != null && result.contains(ap.getTeam().getTeamType().getName())) {
+                    return result + "§7 *";
+                  }
+
+                  return result;
+                }).collect(Collectors.toList()));
+              }
+              if (ap.getEquipment() != null) {
+                if (ap.getEquipment().getTracking() != null) {
+                  Team team = arena.getTeams().get(ap.getEquipment().getTracking());
+                  if (team.getSitation() != ELIMINATED) {
+                    Player target =
+                      team.getAlive().stream().map(ArenaPlayer::getPlayer).min(Comparator.comparingDouble(p -> p.getLocation().distance(player.getLocation()))).orElse(null);
+                    if (target != null) {
+                      player.setCompassTarget(target.getLocation());
+                      NMS.sendActionBar(player,
+                        "§7Rastreando: " + target.getDisplayName() + " §a(" + TRACKING_FORMAT.format(player.getLocation().distance(target.getLocation())) + "m)");
+                    }
+                  }
+                }
+              }
+            });
+            lines.clear();
+          }
+        }.runTaskAsynchronously(Core.getInstance());
+        if (getArena().getUpgradeState().getSubMessage() != null && getTime() == 60 * 6) {
+          getArena().getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(player -> player.sendMessage(
             getArena().getUpgradeState().getSubMessage().replace("%s", String.valueOf(getTime() / 60)).replace("%format", (getTime() / 60 > 1 ? "minutos" : "minuto"))));
         }
 
         if (this.time == 0) {
+          if (getArena().getUpgradeState() == ArenaEnums.Events.BED_DESTRUCTION) {
+            getArena().listTeams().forEach(Team::breakBed);
+          } else if (getArena().getUpgradeState() == ArenaEnums.Events.GAME_END) {
+            getArena().stop(null);
+            return;
+          }
+
           getArena().setEventState(getArena().getUpgradeState().next());
-          getArena().getArenaPlayers().forEach(ap -> ap.getPlayer().sendMessage(getArena().getUpgradeState().getMessage()));
-          this.time = 60 * 5;
+          getArena().getArenaPlayers().stream().map(a -> (ArenaPlayer) a).forEach(ap -> {
+            Player player = ap.getPlayer();
+            player.sendMessage(getArena().getUpgradeState().getMessage());
+          });
+          this.time = 60 * 6;
           return;
         }
 
         this.time--;
         break;
       default:
-        if (getArena().getPlayingPlayers().size() < getArena().getConfiguration().getMinPlayers()) {
-          getArena().getArenaPlayers().forEach(ap -> {
+        if (getArena().getArenaPlayers().size() < getArena().getConfiguration().getMinPlayers()) {
+          getArena().getArenaPlayers().forEach(a -> {
+            ArenaPlayer ap = (ArenaPlayer) a;
             if (ap.getScoreboard() != null) {
-              ap.getScoreboard().updateLines("      §8[" + getArena().getArenaName() + "]", "", " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
-                " Jogadores: §a" + getArena().getPlayingPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(), "", " Aguardando jogadores...", "",
-                " Modo: §a" + getArena().getConfiguration().getMode(), "", "       §bhylex.net");
+              ap.getScoreboard().updateLines(" §8[BedWars - " + getArena().getArenaName() + "]", "", " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
+                " Jogadores: §a" + getArena().getArenaPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(), "", " Aguardando...", "",
+                " Modo: §a" + getArena().getConfiguration().getMode(), "", " §bhylex.net");
             }
           });
           if (this.time != 20) {
             this.time = 20;
-            getArena().getArenaPlayers().forEach(ap -> {
+            getArena().getArenaPlayers().forEach(a -> {
+              ArenaPlayer ap = (ArenaPlayer) a;
               Player player = ap.getPlayer();
-              new Titles(player, Titles.TitleType.SUBTILE).setBottomMessage("§c§nJogadores insuficientes").send(20, 20 * 2, 20);
+              NMS.sendTitle(player, Titles.TitleType.BOTH, "§fJogadores insuficientes", "§c§lCONTAGEM CANCELADA", 0, 40, 0);
               player.sendMessage("§cO contador foi reiniciado, devido a falta de jogadores");
               player.playSound(player.getLocation(), Sound.CREEPER_HISS, 1.5F, 1.5F);
             });
@@ -129,17 +191,18 @@ public class ArenaTask {
           this.arena.setState(PREPARE);
         }
 
-        getArena().getArenaPlayers().forEach(ap -> {
+        getArena().getArenaPlayers().forEach(a -> {
+          ArenaPlayer ap = (ArenaPlayer) a;
           if (ap.getScoreboard() != null) {
-            ap.getScoreboard().updateLines("      §8[" + getArena().getArenaName(), "", " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
-              " Jogadores: §a" + getArena().getPlayingPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(), "", " Iniciando em §a" + this.time + "s", "",
-              " Modo: §a" + getArena().getConfiguration().getMode(), "", "       §bhylex.net");
+            ap.getScoreboard().updateLines(" §8[BedWars - " + getArena().getArenaName() + "]", "", " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
+              " Jogadores: §a" + getArena().getArenaPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(), "", " Iniciando em §a" + this.time + "s", "",
+              " Modo: §a" + getArena().getConfiguration().getMode(), "", " §bhylex.net");
           }
         });
 
         if (this.time <= 0) {
+          this.time = 60 * 6;
           getArena().start();
-          this.time = 60 * 5;
           return;
         }
 
@@ -149,10 +212,12 @@ public class ArenaTask {
           }
 
           String color = this.time >= 3 ? "§a§l" : this.time == 2 ? "§6§l" : "§c§l";
-          for (ArenaPlayer p : getArena().getArenaPlayers()) {
-            new Titles(p.getPlayer(), Titles.TitleType.TITLE).setBottomMessage(color + this.time).send(0, 20, 0);
-            p.getPlayer().sendMessage("§ePartida iniciando em §f: " + color + this.time + (this.time == 1 ? " §fsegundo" : " §fsegundos"));
-            p.getPlayer().playSound(p.getPlayer().getLocation(), Sound.CLICK, 1.2F, 1.2F);
+          for (IArenaPlayer a : getArena().getArenaPlayers()) {
+            ArenaPlayer ap = (ArenaPlayer) a;
+            Player player = ap.getPlayer();
+            NMS.sendTitle(player, Titles.TitleType.BOTH, "§fPrepare-se para lutar!", color + this.time, 0, 20, 0);
+            player.sendMessage("§ePartida iniciando em " + (color.replace("§l", "")) + this.time + (this.time == 1 ? " §esegundo." : " §esegundos."));
+            player.playSound(player.getLocation(), Sound.CLICK, 1.2F, 1.2F);
           }
         }
 

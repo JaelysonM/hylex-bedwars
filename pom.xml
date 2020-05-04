@@ -84,7 +84,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <outputFile>C:\Users\jaely\Desktop\TacoSpigot\plugins\${project.artifactId}-${project.version}.jar</outputFile>
+                            <outputFile>D:\dev\maven-builds\${project.artifactId}-${project.version}.jar</outputFile>
                             <artifactSet>
                                 <excludes>
                                     <exclude>org.spigotmc:*</exclude>

@@ -1,8 +1,6 @@
 package com.uzm.hylex.bedwars.arena.enums;
 
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 public enum BuyEnums {
   IRON("Ferro", "§7Ferro", Material.IRON_INGOT),
@@ -30,14 +28,5 @@ public enum BuyEnums {
 
   public String getDisplayName() {
     return displayName;
-  }
-
-  public boolean buy(Player player, int price) {
-    if (player.getInventory().contains(getMaterial(), price)) {
-      player.getInventory().removeItem(new ItemStack(getMaterial(), price));
-      return true;
-    } else {
-      return false;
-    }
   }
 }

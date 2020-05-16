@@ -3,9 +3,9 @@ package com.uzm.hylex.bedwars.arena.generators;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.nms.NMS;
 import com.uzm.hylex.bedwars.nms.entity.EntityGenerator;
-import com.uzm.hylex.bedwars.utils.Utils;
 import com.uzm.hylex.core.libraries.holograms.HologramLibrary;
 import com.uzm.hylex.core.libraries.holograms.api.Hologram;
+import com.uzm.hylex.core.spigot.items.ItemStackUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -76,7 +76,6 @@ public class Generator {
       this.hologram = null;
     }
   }
-
   public void tick() {
     ArmorStand armorStand = this.block.getEntity();
     Location location = armorStand.getLocation();
@@ -100,7 +99,7 @@ public class Generator {
     if (this.tick == 20) {
       this.tick = 0;
       if (this.countdown == 0) {
-        if (Utils.getAmountOfItem(this.type.getItem(), this.location) < 4) {
+        if (ItemStackUtils.getAmountOfItem(this.type.getItem(), this.location) < 4) {
           Item item = this.location.getWorld().dropItem(this.location, new ItemStack(this.type.getItem()));
           item.setPickupDelay(0);
           item.setVelocity(new Vector());

@@ -8,7 +8,7 @@ import com.uzm.hylex.bedwars.controllers.ArenaController;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.spigot.inventories.PageablePlayerInventory;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -66,6 +66,9 @@ public class ArenasMenu extends PageablePlayerInventory {
           value =
             "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjJkMTQ1YzkzZTVlYWM0OGE2NjFjNmYyN2ZkYWZmNTkyMmNmNDMzZGQ2MjdiZjIzZWVjMzc4Yjk5NTYxOTcifX19====";
           break;
+        default:
+          value = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7ImlkIjoiMTkwM2NhNWE3MjgzNDExODk5NjMwYTY5OTM3MTY3NmMiLCJ0eXBlIjoiU0tJTiIsInVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMmM5MTVkYjNmYzQwYTc5YjYzYzJjNDUzZjBjNDkwOTgxZTUyMjdjNTAyNzUwMTI4MzI3MjEzODUzM2RlYTUxOSIsInByb2ZpbGVJZCI6IjgwMThhYjAwYjJhZTQ0Y2FhYzliZjYwZWY5MGY0NWU1IiwidGV4dHVyZUlkIjoiMmM5MTVkYjNmYzQwYTc5YjYzYzJjNDUzZjBjNDkwOTgxZTUyMjdjNTAyNzUwMTI4MzI3MjEzODUzM2RlYTUxOSJ9fSwic2tpbiI6eyJpZCI6IjE5MDNjYTVhNzI4MzQxMTg5OTYzMGE2OTkzNzE2NzZjIiwidHlwZSI6IlNLSU4iLCJ1cmwiOiJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzJjOTE1ZGIzZmM0MGE3OWI2M2MyYzQ1M2YwYzQ5MDk4MWU1MjI3YzUwMjc1MDEyODMyNzIxMzg1MzNkZWE1MTkiLCJwcm9maWxlSWQiOiI4MDE4YWIwMGIyYWU0NGNhYWM5YmY2MGVmOTBmNDVlNSIsInRleHR1cmVJZCI6IjJjOTE1ZGIzZmM0MGE3OWI2M2MyYzQ1M2YwYzQ5MDk4MWU1MjI3YzUwMjc1MDEyODMyNzIxMzg1MzNkZWE1MTkifSwiY2FwZSI6bnVsbH0=";
+          break;
       }
       ItemStack stack = BukkitUtils.putProfileOnSkull(value, new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§e" + arenas.getArenaName())
         .lore("", " §eInformações da arena:", "", "  §a★ §7Estado atual: §e" + arenas.getState().toString(),
@@ -89,9 +92,9 @@ public class ArenasMenu extends PageablePlayerInventory {
 
   public void click(InventoryClickEvent evt) {
     ItemStack item = evt.getCurrentItem();
-    if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§9Página anterior")) {
+    if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§ePágina anterior")) {
       open(getPlayer(), getCurrent() - 1);
-    } else if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§9Próxima página")) {
+    } else if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§ePágina posterior")) {
       open(getPlayer(), getCurrent() + 1);
     } else {
       HylexPlayer hp = HylexPlayer.getByPlayer(getPlayer());

@@ -4,7 +4,6 @@ import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.team.Team;
 import com.uzm.hylex.core.api.interfaces.IArenaPlayer;
-import com.uzm.hylex.core.controllers.TagController;
 import com.uzm.hylex.core.nms.NMS;
 import com.uzm.hylex.core.spigot.features.Titles;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
@@ -17,6 +16,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.util.Objects;
 
 import static com.uzm.hylex.bedwars.arena.improvements.UpgradeType.*;
 
@@ -28,6 +30,9 @@ public class ArenaPlayer implements IArenaPlayer {
   private Team team;
   private AsyncScoreboard scoreboard;
   private ArenaEquipment equipment;
+  private int beds_broken;
+  private int final_kills;
+  private int kills;
 
   public ArenaPlayer(Player player, Arena arena) {
     this.arena = arena;
@@ -54,22 +59,30 @@ public class ArenaPlayer implements IArenaPlayer {
   public void update() {
     switch (getCurrentState()) {
       case DEAD:
-        NMS.sendTitle(player, Titles.TitleType.BOTH, "§fVocê foi eliminado!", "§c§lDERROTA", 10, 60, 0);
+        if (player != null) {
+          NMS.sendTitle(player, Titles.TitleType.BOTH, "§fVocê foi eliminado!", "§c§lDERROTA", 10, 60, 0);
+          player.setMaxHealth(20.0D);
+          player.setHealth(20.0D);
+          player.setNoDamageTicks(20 * 5);
+        }
       case SPECTATING:
-        getArena().getArenaPlayers().stream().map(a -> (ArenaPlayer) a).forEach(ap -> {
-          Player players = ap.getPlayer();
+        if (getArena() != null) {
+          getArena().getArenaPlayers().stream().filter(Objects::nonNull).map(a -> (ArenaPlayer) a).forEach(ap -> {
+            Player players = ap.getPlayer();
+            if (players != null) {
+              player.showPlayer(players);
+              if (ap.getCurrentState().isInGame()) {
+                players.hidePlayer(player);
+              } else {
+                players.showPlayer(player);
+              }
+            }
+          });
+        }
 
-          player.showPlayer(players);
-          if (ap.getCurrentState().isInGame()) {
-            players.hidePlayer(player);
-          } else {
-            players.showPlayer(player);
-          }
-        });
         org.bukkit.scoreboard.Team team = player.getScoreboard().getPlayerTeam(player);
         if (team != null) {
-          team.unregister();
-          TagController.get(player).setTeam(null);
+          team.removePlayer(player);
         }
         if (!Core.team.hasPlayer(player)) {
           Core.team.addPlayer(player);
@@ -111,6 +124,7 @@ public class ArenaPlayer implements IArenaPlayer {
                 update();
                 NMS.sendTitle(player, Titles.TitleType.BOTH, "", "", 0, 0, 0);
                 player.teleport(getTeam().getSpawnLocation());
+
                 getArena().getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(players -> players.showPlayer(player));
               }
               return;
@@ -128,6 +142,7 @@ public class ArenaPlayer implements IArenaPlayer {
         player.setGameMode(GameMode.SURVIVAL);
         equip();
         refresh();
+        player.setNoDamageTicks(60);
         break;
     }
   }
@@ -176,7 +191,9 @@ public class ArenaPlayer implements IArenaPlayer {
     if (this.equipment != null) {
       this.equipment.destroy();
     }
-    this.equipment = new ArenaEquipment(this);
+    if (this.team != null) {
+      this.equipment = new ArenaEquipment(this);
+    }
   }
 
   public void setCurrentState(CurrentState currentState) {
@@ -205,6 +222,30 @@ public class ArenaPlayer implements IArenaPlayer {
 
   public CurrentState getCurrentState() {
     return this.currentState;
+  }
+
+  public void addKills() {
+    this.kills++;
+  }
+
+  public void addBedBroken() {
+    this.beds_broken++;
+  }
+
+  public void addFinalKill() {
+    this.final_kills++;
+  }
+
+  public int getKills() {
+    return this.kills;
+  }
+
+  public int getBedsBroken() {
+    return this.beds_broken;
+  }
+
+  public int getFinalKills() {
+    return this.final_kills;
   }
 
   public enum CurrentState {
@@ -246,5 +287,6 @@ public class ArenaPlayer implements IArenaPlayer {
     public boolean isSpectating() {
       return isSpectating;
     }
+
   }
 }

@@ -6,9 +6,9 @@ import com.uzm.hylex.bedwars.arena.team.Team;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
 import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.Location;
-import org.bukkit.entity.Fireball;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
+import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -25,7 +25,6 @@ public class EntityListener implements Listener {
     if (evt.isCancelled()) {
       return;
     }
-
     if (evt.getEntity() instanceof Player) {
       Player player = (Player) evt.getEntity();
 
@@ -53,10 +52,9 @@ public class EntityListener implements Listener {
 
       if (evt.getDamager() instanceof Projectile) {
         Projectile proj = (Projectile) evt.getDamager();
-        if (proj.hasMetadata("BEDWARS_FIREBALL")) {
-          evt.setDamage(8.0);
+      /*  if (proj.hasMetadata("BEDWARS_FIREBALL")) {
         }
-
+*/
         if (proj.getShooter() instanceof Player) {
           damager = (Player) proj.getShooter();
           hp2 = HylexPlayer.getByPlayer(damager);
@@ -115,13 +113,16 @@ public class EntityListener implements Listener {
   @EventHandler
   public void onProjectileHit(ProjectileHitEvent evt) {
     Projectile proj = evt.getEntity();
-    if (proj.hasMetadata("BEDWARS_FIREBALL")) {
-      Location explosionLocation = proj.getLocation();
+    Location explosionLocation = proj.getLocation();
 
+    if (proj.hasMetadata("BEDWARS_FIREBALL")) {
       if (explosionLocation != null) {
-        explosionLocation.getWorld().createExplosion(explosionLocation.getX(), explosionLocation.getY() + 0.98 / 2.0F, explosionLocation.getZ(), 1.0F);
+        boolean flag = ((CraftWorld) explosionLocation.getWorld()).getHandle().getGameRules().getBoolean("mobGriefing");
+        ((CraftWorld) explosionLocation.getWorld()).getHandle().createExplosion(((CraftEntity) evt.getEntity()).getHandle(), explosionLocation.getX(), explosionLocation.getY() + 0.98 / 2.0F, explosionLocation.getZ() ,1.0F, true, true);
       }
+
     }
+
   }
 
   @EventHandler

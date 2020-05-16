@@ -45,7 +45,6 @@
             <version>${protocollib.version}</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>uzm</groupId>
             <artifactId>hylex-services</artifactId>
@@ -58,9 +57,8 @@
             <artifactId>hylex-core</artifactId>
             <scope>system</scope>
             <version>1.0.0</version>
-            <systemPath>D:/dev/maven-builds/hylex-core-1.0.0.jar</systemPath>
+            <systemPath>D:/dev/maven-builds/hylex-core.jar</systemPath>
         </dependency>
-
     </dependencies>
 
 
@@ -84,7 +82,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <outputFile>D:\dev\maven-builds\${project.artifactId}-${project.version}.jar</outputFile>
+                            <outputFile>D:\dev\maven-builds\${project.artifactId}.jar</outputFile>
                             <artifactSet>
                                 <excludes>
                                     <exclude>org.spigotmc:*</exclude>

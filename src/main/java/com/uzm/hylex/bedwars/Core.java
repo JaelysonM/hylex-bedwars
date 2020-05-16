@@ -1,8 +1,11 @@
 package com.uzm.hylex.bedwars;
 
+import com.uzm.hylex.bedwars.arena.player.ArenaEquipment;
+import com.uzm.hylex.bedwars.controllers.ArenaController;
 import com.uzm.hylex.bedwars.loaders.PluginLoader;
 import com.uzm.hylex.bedwars.proxy.BungeePluginMessageListener;
-import com.uzm.hylex.core.java.util.ConfigurationCreator;
+import com.uzm.hylex.bedwars.proxy.LobbyMessageListener;
+import com.uzm.hylex.core.java.util.configuration.ConfigurationCreator;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -12,6 +15,8 @@ import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+
+import java.util.ArrayList;
 
 public class Core extends JavaPlugin {
 
@@ -24,9 +29,11 @@ public class Core extends JavaPlugin {
     new ConfigurationCreator(this, "setup", "");
     com.uzm.hylex.core.Core.SOCKET_NAME = "bedwars-" + ConfigurationCreator.find("setup", this).get().getString("mega-name");
     com.uzm.hylex.core.Core.IS_ARENA_CLIENT = true;
+    com.uzm.hylex.core.Core.DISABLE_FLY = true;
   }
 
   public void onEnable() {
+    System.gc();
     long aux = System.currentTimeMillis();
 
     Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
@@ -49,6 +56,12 @@ public class Core extends JavaPlugin {
       team.setCanSeeFriendlyInvisibles(true);
     }
 
+    for (Team team : new ArrayList<>(Bukkit.getScoreboardManager().getMainScoreboard().getTeams())) {
+      if (team.getName().contains("mini")) {
+        team.unregister();
+      }
+    }
+
     Objective finalHealthPL = healthPL;
     new BukkitRunnable() {
       @Override
@@ -66,16 +79,24 @@ public class Core extends JavaPlugin {
 
     core = this;
     loader = new PluginLoader(this);
-    Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-    Bukkit.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", new BungeePluginMessageListener());
 
+    Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+    Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(this, "hylex-core");
+    Bukkit.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", new BungeePluginMessageListener());
+    Bukkit.getServer().getMessenger().registerIncomingPluginChannel(this, "hylex-core", new LobbyMessageListener());
 
 
     getServer().getConsoleSender()
       .sendMessage("§b[Hylex Module: BedWars] §7Plugin §fdefinitivamente §7carregado com sucesso (§f" + (System.currentTimeMillis() - aux + " milisegundos§7)"));
+
+    ArenaEquipment.woodSword();
   }
 
+
+
   public void onDisable() {
+    getServer().getConsoleSender().sendMessage("§b[Hylex Module: BedWars] §7Deletando mundos das arenas...");
+
     getServer().getConsoleSender().sendMessage("§b[Hylex Module: BedWars] §7Plugin §bdesligado§7, juntamente todos os eventos e comandos também.");
   }
 

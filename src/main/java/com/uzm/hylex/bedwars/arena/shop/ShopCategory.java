@@ -1,7 +1,7 @@
 package com.uzm.hylex.bedwars.arena.shop;
 
 import com.uzm.hylex.bedwars.Core;
-import com.uzm.hylex.core.java.util.ConfigurationCreator;
+import com.uzm.hylex.core.java.util.configuration.ConfigurationCreator;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;

@@ -9,6 +9,8 @@ public class HylexPlayerController {
 
   public static void setupHotbar(HylexPlayer hp) {
     Player player = hp.getPlayer();
+
+    player.getInventory().clear();
     player.getInventory().setItem(8, new ItemBuilder(Material.BED).name("§cVoltar ao Lobby").lore("§7Clique para voltar ao Lobby.").build());
   }
 }

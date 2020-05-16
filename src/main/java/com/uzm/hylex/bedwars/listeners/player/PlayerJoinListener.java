@@ -33,9 +33,12 @@ public class PlayerJoinListener implements Listener {
 
       Bukkit.getScheduler().runTask(Core.getInstance(), () -> arena.join(hp));
     } else {
-      for (Player players : Bukkit.getOnlinePlayers()) {
-        players.hidePlayer(player);
-      }
+      Bukkit.getScheduler().runTask(Core.getInstance(), () -> {
+
+        for (Player players : Bukkit.getOnlinePlayers()) {
+          players.hidePlayer(player);
+        }
+      });
     }
   }
 

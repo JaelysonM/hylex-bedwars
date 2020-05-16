@@ -5,20 +5,53 @@ import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.improvements.UpgradeType;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.core.api.HylexPlayer;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.items.ItemBuilder;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.IN_GAME;
 
+
+
 public class PlayerPickupListener implements Listener {
+  private static final Map<String, Long> PROTECTION_PICKUP = new HashMap<>();
+
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void onSplitDropMonitor(PlayerPickupItemEvent evt) {
+    Player player = evt.getPlayer();
+    Item i = evt.getItem();
+    if (i.getItemStack().getType() == Material.GOLD_INGOT || i.getItemStack().getType() == Material.IRON_INGOT || i.getItemStack().getType() == Material.EMERALD) {
+      int nearby = evt.getPlayer().getNearbyEntities(1, 1, 1).stream().filter(e -> e.getType() == EntityType.PLAYER).collect(Collectors.toList()).size();
+      if (nearby != 0) {
+        long last = PROTECTION_PICKUP.getOrDefault(player.getName().toLowerCase(), 0L);
+        if (last > System.currentTimeMillis()) {
+          PROTECTION_PICKUP.remove(player.getName().toLowerCase());
+          return;
+        }
+        evt.setCancelled(true);
+        PROTECTION_PICKUP.put(player.getName().toLowerCase(), System.currentTimeMillis() + 10);
+        evt.getItem().setItemStack(new ItemBuilder(i.getItemStack().clone()).amount(i.getItemStack().getAmount() / (nearby)).build());
+
+      }
+    }
+  }
+
+
 
   @EventHandler
   public void onPlayerPickup(PlayerPickupItemEvent evt) {
@@ -44,7 +77,7 @@ public class PlayerPickupListener implements Listener {
           if (item.getType() == Material.RED_ROSE) {
             evt.setCancelled(true);
           } else if (item.getType().name().contains("_SWORD")) {
-            if (player.getInventory().containsAtLeast(new ItemStack(Material.WOOD_SWORD), 1)) {
+            if (player.getInventory().contains(Material.WOOD_SWORD)) {
               player.getInventory().removeItem(new ItemStack(Material.WOOD_SWORD));
             }
           }

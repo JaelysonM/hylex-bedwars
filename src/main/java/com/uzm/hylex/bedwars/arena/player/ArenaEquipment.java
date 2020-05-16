@@ -1,11 +1,20 @@
 package com.uzm.hylex.bedwars.arena.player;
 
+import com.google.common.collect.Lists;
+import com.uzm.hylex.bedwars.Core;
+import com.uzm.hylex.bedwars.arena.improvements.UpgradeType;
 import com.uzm.hylex.bedwars.arena.shop.ShopItem;
 import com.uzm.hylex.bedwars.arena.team.Teams;
+import com.uzm.hylex.bedwars.utils.PlayerUtils;
+import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
+
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
@@ -66,39 +75,21 @@ public class ArenaEquipment {
     this.tiers = null;
   }
 
+  private boolean disableInvisibility;
+
   public boolean update() {
-    boolean refreshUpgrades = false;
     if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
-      for (ItemStack stack : player.getInventory().getArmorContents()) {
-        if (stack != null && !stack.getType().name().contains("AIR")) {
-          refreshUpgrades = true;
-          break;
-        }
-      }
-
-      if (refreshUpgrades) {
-        this.player.getInventory().setArmorContents(null);
-        this.player.updateInventory();
-      }
-    } else {
-      for (ItemStack stack : player.getInventory().getArmorContents()) {
-        if (stack == null || stack.getType().name().contains("AIR")) {
-          refreshUpgrades = true;
-          break;
-        }
-      }
-
-      if (refreshUpgrades) {
-        this.player.getInventory().setItem(8, this.compass);
-        this.player.getInventory().setHelmet(this.helmet);
-        this.player.getInventory().setChestplate(this.chestplate);
-        this.player.getInventory().setLeggings(this.leggings);
-        this.player.getInventory().setBoots(this.boots);
-        this.player.updateInventory();
-      }
+      this.disableInvisibility = true;
+      return true;
     }
 
-    return refreshUpgrades;
+    return false;
+  }
+
+  public boolean isDisableInvisibility() {
+    boolean sendArmor = this.disableInvisibility;
+    this.disableInvisibility = false;
+    return sendArmor;
   }
 
   public void setTracking(Teams tracking) {
@@ -170,7 +161,13 @@ public class ArenaEquipment {
         if (!item.lostOnDie()) {
           this.sword = is;
         }
-        BukkitUtils.replaceItem(player.getInventory(), "SWORD", is);
+        if (PlayerUtils.containsWoodSword(Lists.newArrayList(player.getInventory().getContents()))) {
+          BukkitUtils.replaceItem(player.getInventory(), "SWORD", is);
+        } else {
+          player.getInventory().addItem(is);
+        }
+
+
       } else if (is.getType().name().contains("HELMET")) {
         if (!item.lostOnDie()) {
           this.helmet = is;
@@ -263,5 +260,37 @@ public class ArenaEquipment {
 
   public int getDeaths() {
     return this.deaths;
+  }
+
+
+  public static void woodSword() {
+    Bukkit.getServer().getScheduler().runTaskTimerAsynchronously(Core.getInstance(), () -> {
+      for (Player pls : Bukkit.getOnlinePlayers()) {
+        HylexPlayer hp = HylexPlayer.getByPlayer(pls);
+        ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
+        if (ap != null) {
+          if (ap.getCurrentState().isInGame()) {
+            if (PlayerUtils.containsSword(Lists.newArrayList(pls.getInventory().getContents())) && pls.getItemOnCursor().getType() != WOOD_SWORD) {
+              if (pls.getInventory().contains(WOOD_SWORD))
+                pls.getInventory().remove(WOOD_SWORD);
+            } else {
+              if (!pls.getInventory().contains(WOOD_SWORD) && pls.getItemOnCursor().getType() != WOOD_SWORD) {
+                if (ap.getTeam() != null) {
+                  if (ap.getTeam().hasUpgrade(UpgradeType.SHARPENED_SWORDS)) {
+                    pls.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).enchant(Enchantment.DAMAGE_ALL, ap.getTeam().getTier(UpgradeType.SHARPENED_SWORDS)).build());
+                    pls.updateInventory();
+                  } else {
+                    pls.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).build());
+
+                  }
+                }
+              }
+
+
+            }
+          }
+        }
+      }
+    }, 0, 20L);
   }
 }

@@ -1,18 +1,21 @@
 package com.uzm.hylex.bedwars.arena.team;
 
 import com.google.common.collect.ImmutableList;
+import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.improvements.Trap;
 import com.uzm.hylex.bedwars.arena.improvements.UpgradeType;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
-import com.uzm.hylex.bedwars.utils.Utils;
 import com.uzm.hylex.core.api.Group;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.libraries.holograms.HologramLibrary;
 import com.uzm.hylex.core.libraries.holograms.api.Hologram;
 import com.uzm.hylex.core.libraries.npclib.NPCLibrary;
 import com.uzm.hylex.core.libraries.npclib.api.NPC;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.items.ItemStackUtils;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import com.uzm.hylex.core.utils.CubeId;
+import org.bukkit.Bukkit;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -53,7 +56,7 @@ public class Team {
 
   private double iron = 1.0D;
   private double gold = 6.0D;
-  private double emerald = 0.7;
+  private double emerald = 15.0D;
 
   private Player lastTrapped;
   private long lastTrappedTime;
@@ -69,6 +72,27 @@ public class Team {
   public Team(Teams teamType) {
     this.teamType = teamType;
     setSitation(Sitation.WAITING);
+  }
+
+  private org.bukkit.scoreboard.Team team;
+
+  public void registerTeam(String prefix) {
+    this.team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(this.teamType.getOrder() + prefix);
+    if (this.team == null) {
+      this.team = Bukkit.getScoreboardManager().getMainScoreboard().registerNewTeam(this.teamType.getOrder() + prefix);
+      this.team.setPrefix(this.teamType.getScoreboardName() + " ");
+      this.team.setSuffix("");
+    }
+
+    this.members.forEach(ap -> {
+      if (!this.team.hasPlayer(ap.getPlayer())) {
+        this.team.addPlayer(ap.getPlayer());
+      }
+    });
+  }
+
+  public org.bukkit.scoreboard.Team getTeam() {
+    return this.team;
   }
 
   public void breakBed() {
@@ -87,6 +111,11 @@ public class Team {
   public void setLastTrapped(Player player) {
     this.lastTrappedTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(90);
     this.lastTrapped = player;
+  }
+
+  public void disableGravity() {
+    this.npcShop.data().set(NPC.GRAVITY, false);
+    this.npcUpgrades.data().set(NPC.GRAVITY, false);
   }
 
   public void enableHolograms() {
@@ -267,10 +296,21 @@ public class Team {
 
   public void tick() {
     if (this.hasUpgrade(HEAL_POOL)) {
+      Bukkit.getScheduler().runTaskAsynchronously(Core.getInstance(), () -> {
+        for (int i = 0; i < 300; i++) {
+          Location l = getBorder().getRandomLocation();
+          l.getWorld().spigot().playEffect(l, Effect.HAPPY_VILLAGER);
+        }
+      });
+
       this.alive.forEach(ap -> {
         Player player = ap.getPlayer();
-        if (!player.hasPotionEffect(PotionEffectType.REGENERATION) && getBorder().contains(player.getLocation())) {
-          player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 0));
+        if (getBorder().contains(player.getLocation())) {
+          if (!player.hasPotionEffect(PotionEffectType.REGENERATION)) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0));
+          }
+        } else if (player.hasPotionEffect(PotionEffectType.REGENERATION)) {
+          player.removePotionEffect(PotionEffectType.REGENERATION);
         }
       });
     }
@@ -280,9 +320,9 @@ public class Team {
 
   private void tickGenerator(boolean upgrade) {
     if (this.iron == 0.0D) {
-      this.iron = 1.0D;
+      this.iron = 1.5D;
       for (Location locs : getTeamGenerators()) {
-        if (Utils.getAmountOfItem(Material.IRON_INGOT, locs) >= 64) {
+        if (ItemStackUtils.getAmountOfItem(Material.IRON_INGOT, locs) >= 64) {
           break;
         }
         Item item = locs.getWorld().dropItem(locs, new ItemStack(Material.IRON_INGOT));
@@ -294,9 +334,9 @@ public class Team {
     }
 
     if (gold == 0.0D) {
-      gold = 6.0D;
+      gold = 6.5D;
       for (Location locs : getTeamGenerators()) {
-        if (Utils.getAmountOfItem(Material.IRON_INGOT, locs) >= 48) {
+        if (ItemStackUtils.getAmountOfItem(Material.GOLD_INGOT, locs) >= 48) {
           break;
         }
         Item item = locs.getWorld().dropItem(locs, new ItemStack(Material.GOLD_INGOT));
@@ -310,9 +350,9 @@ public class Team {
     int level = getTier(UpgradeType.IRON_FORGE);
     if (level > 2) {
       if (emerald == 0.0D) {
-        emerald = 15.0D;
+        emerald = 30.0D;
         for (Location locs : getTeamGenerators()) {
-          if (Utils.getAmountOfItem(Material.IRON_INGOT, locs) >= 32) {
+          if (ItemStackUtils.getAmountOfItem(Material.EMERALD, locs) >= 32) {
             break;
           }
           Item item = locs.getWorld().dropItem(locs, new ItemStack(Material.EMERALD));

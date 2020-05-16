@@ -1,8 +1,10 @@
 package com.uzm.hylex.bedwars.listeners.player;
 
+import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.core.api.HylexPlayer;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,12 +26,12 @@ public class PlayerMoveListener implements Listener {
       if (ap != null) {
         Arena arena = ap.getArena();
         if (arena != null && arena.getState() == IN_GAME) {
-          arena.listTeams().stream()
-            .filter(t -> !t.getMembers().contains(ap) && t.getBorder().contains(player.getLocation()) && !player.equals(t.getLastTrapped()))
-            .findFirst()
-            .ifPresent(team -> team.getTraps().stream()
+            arena.listTeams().stream()
+              .filter(t -> !t.getMembers().contains(ap) && t.getBorder().contains(player.getLocation()) && !player.equals(t.getLastTrapped()))
               .findFirst()
-              .ifPresent(trap -> trap.onEnter(team, ap)));
+              .ifPresent(team -> team.getTraps().stream()
+                .findFirst()
+                .ifPresent(trap -> trap.onEnter(team, ap)));
         }
       }
     }

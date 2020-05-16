@@ -10,7 +10,7 @@ import org.bukkit.block.Block;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.END;
+import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.IDLE;
 
 public class ArenaBlocks {
 
@@ -34,11 +34,13 @@ public class ArenaBlocks {
   }
 
   public void clearArena() {
+    this.arena.getMainTask().cancel();
+    this.arena.setState(IDLE);
     this.placed.clear();
-    this.arena.getGenerators().forEach(Generator::disable);
     this.arena.listTeams().forEach(Team::resetTeam);
+    this.arena.getGenerators().forEach(Generator::disable);
     Bukkit.unloadWorld(this.arena.getArenaName(), false);
-    if (ArenaController.listArenas().stream().noneMatch(arena -> Bukkit.getWorld(this.arena.getArenaName()) != null)) {
+    if (ArenaController.listArenas().stream().filter(result -> result.getState() == IDLE).count() >= ArenaController.getArenas().size()) {
       Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "restart");
     }
   }

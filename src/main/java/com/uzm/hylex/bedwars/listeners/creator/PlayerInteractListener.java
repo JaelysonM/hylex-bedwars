@@ -25,6 +25,10 @@ public class PlayerInteractListener implements Listener {
       if (evt.getItem() != null) {
         if (evt.getItem().hasItemMeta()) {
           if (evt.getItem().getItemMeta().hasDisplayName()) {
+
+             if (hp.getAbstractArena() == null) {
+               return;
+             }
             if (evt.getItem().getItemMeta().getDisplayName().startsWith("§aSetar posições")) {
               evt.setCancelled(true);
               if (evt.getAction().toString().contains("LEFT")) {
@@ -125,7 +129,7 @@ public class PlayerInteractListener implements Listener {
               if (evt.getAction().toString().contains("LEFT")) {
                 player.getInventory().setItem(4, new ItemBuilder(Material.EYE_OF_ENDER).name("§aSetar > §8Spawn do espectador  §7(Clique para alterar)").build());
               } else {
-                player.sendMessage("§6[ArenaCreator] §7Você setou o §bLocal de espera§7 da arena na sua localização.");
+                player.sendMessage("§6[ArenaCreator] §7Você setou o §blocal de espera§7 da arena na sua localização.");
                 ((Arena) hp.getAbstractArena()).setWaitingLocation(player.getLocation());
               }
             } else if (evt.getItem().getItemMeta().getDisplayName().equalsIgnoreCase("§aSetar > §8Spawn do espectador  §7(Clique para alterar)")) {
@@ -133,7 +137,7 @@ public class PlayerInteractListener implements Listener {
               if (evt.getAction().toString().contains("LEFT")) {
                 player.getInventory().setItem(4, new ItemBuilder(Material.NETHER_STAR).name("§aSetar > §8Local de espera  §7(Clique para alterar)").build());
               } else {
-                player.sendMessage("§6[ArenaCreator] §7Você setou o §bSpawn do espectador§7 da arena na sua localização.");
+                player.sendMessage("§6[ArenaCreator] §7Você setou o §bspawn do espectador§7 da arena na sua localização.");
                 ((Arena) hp.getAbstractArena()).setSpectatorLocation(player.getLocation());
               }
             } else if (evt.getItem().getItemMeta().getDisplayName().equalsIgnoreCase("§cAbrir configurações")) {
@@ -146,7 +150,25 @@ public class PlayerInteractListener implements Listener {
                 Material material = item.getType();
                 String displayName = item.getItemMeta().getDisplayName();
 
-                if (material == Material.NETHER_STAR || material == Material.EYE_OF_ENDER) {
+                if (material == Material.ARMOR_STAND ) {
+                    int size = 0;
+                    if (hp.getTemporaryLocation()[0] != null) {
+                      size++;
+                    }
+                    if (hp.getTemporaryLocation()[1] != null) {
+                      size++;
+                    }
+                    if (size == 2) {
+                      player.sendMessage("§a* Você salvou as §fbordas §ada área de espera acom sucesso.");
+                      ((Arena)hp.getAbstractArena()).setWaitingLocationBorder(new CubeId(hp.getTemporaryLocation()[0], hp.getTemporaryLocation()[1]));
+                      hp.setTemporaryLocation(new Location[2]);
+                    } else {
+                      player.sendMessage("§6[ArenaCreator] §cVocê não setou todas a localizações ainda faltam §f" + (2 - size) + "§c.");
+                    }
+
+                }
+
+               else if (material == Material.NETHER_STAR || material == Material.EYE_OF_ENDER) {
                   player.sendMessage(
                     "§a* Alterações salvadas com sucesso: §fLocalizações da arena." + (((Arena) hp.getAbstractArena()).getSpectatorLocation() != null ? " §e(Alterado)" : ""));
                   player.getInventory().clear();

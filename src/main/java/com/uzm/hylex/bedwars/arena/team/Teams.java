@@ -14,7 +14,7 @@ public enum Teams {
   BLUE("Azul", "§9Azul", Color.fromRGB(0, 0, 255), DyeColor.BLUE, "b"),
   GREEN("Verde", "§aVerde", Color.fromRGB(0, 255, 0), DyeColor.GREEN, "c"),
   YELLOW("Amarelo", "§eAmarelo", Color.fromRGB(255, 255, 0), DyeColor.YELLOW, "d"),
-  AQUA("Azul claro", "§bAzul claro", Color.fromRGB(173, 216, 230), DyeColor.LIGHT_BLUE, "e"),
+  AQUA("Ciano", "§bCiano", Color.fromRGB(173, 216, 230), DyeColor.LIGHT_BLUE, "e"),
   WHITE("Branco", "§fBranco", Color.fromRGB(255, 255, 255), DyeColor.WHITE, "f"),
   PINK("Rosa", "§dRosa", Color.fromRGB(255, 192, 203), DyeColor.PINK, "g"),
   GREY("Cinza", "§8Cinza", Color.fromRGB(105, 105, 105), DyeColor.GRAY, "h");

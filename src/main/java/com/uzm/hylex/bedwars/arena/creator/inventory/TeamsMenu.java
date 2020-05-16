@@ -7,8 +7,9 @@ import com.uzm.hylex.bedwars.arena.team.Teams;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.spigot.inventories.PageablePlayerInventory;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -55,9 +56,9 @@ public class TeamsMenu extends PageablePlayerInventory {
 
   public void click(Inventory inv, ItemStack item, int slot) {
     Player player = getPlayer();
-    if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§9Página anterior")) {
+    if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§ePágina anterior")) {
       open(getPlayer(), getCurrent() - 1);
-    } else if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§9Próxima página")) {
+    } else if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§ePágina posterior")) {
       open(getPlayer(), getCurrent() + 1);
     } else if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§bVoltar")) {
       new MainPainel(getPlayer(), (Arena) HylexPlayer.getByPlayer(player).getAbstractArena());
@@ -86,6 +87,7 @@ public class TeamsMenu extends PageablePlayerInventory {
       player.closeInventory();
 
       player.sendMessage("§aYAY!! Você ganhou os itens para configurar o time: " + team.getDisplayName() + "§a.");
+      HylexPlayer.getByPlayer(player).setTemporaryLocation(new Location[2]);
     }
   }
 

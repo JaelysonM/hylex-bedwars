@@ -14,12 +14,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
-import static com.uzm.hylex.bedwars.utils.VoidChunkGenerator.VOID_CHUNK_GENERATOR;
+import static com.uzm.hylex.core.spigot.utils.VoidChunkGenerator.VOID_CHUNK_GENERATOR;
 
 public class LoadWorldCommand implements CommandExecutor {
 
   @Override
   public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    if (!(sender instanceof Player)) {
+      sender.sendMessage("§fHey brother, stop do it! You cannot execute commands.");
+      return true;
+    }
+
     if (!sender.hasPermission("hylex.bedwars.setup")) {
       sender.sendMessage("§b[Hylex] §cSem §c§npermissão §cpara executar esse comando.");
       return true;

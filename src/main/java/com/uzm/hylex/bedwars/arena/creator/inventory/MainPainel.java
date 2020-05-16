@@ -1,13 +1,16 @@
 package com.uzm.hylex.bedwars.arena.creator.inventory;
 
 import com.uzm.hylex.bedwars.arena.Arena;
+import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.arena.team.Team;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
+import com.uzm.hylex.bedwars.controllers.HylexPlayerController;
 import com.uzm.hylex.core.Core;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.spigot.inventories.PlayerMenu;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -32,6 +35,23 @@ public class MainPainel extends PlayerMenu {
 
           if (display.equalsIgnoreCase("§b✉ §7Configurações essenciais")) {
             new SetupMenu(player, (Arena) getAttached(0));
+
+          } else if (display.equalsIgnoreCase("§b★ §7Bordas da sala de espera §e§lNOVO")) {
+            HylexPlayer.getByPlayer(player).setTemporaryLocation(new Location[2]);
+            player.getInventory().clear();
+            player.updateInventory();
+
+            player.getInventory().setItem(2, new ItemBuilder(Material.WOOD_AXE).name("§aSetar posições §7(Esquerdo: Localização #1/Direito: Localização #2)").build());
+            player.getInventory().setItem(4, new ItemBuilder(Material.ARMOR_STAND).name("§bBordas da área de espera").build());
+            player.getInventory().setItem(6, BukkitUtils.putProfileOnSkull(
+              "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTZjYzQ4NmMyYmUxY2I5ZGZjYjJlNTNkZDlhM2U5YTg4M2JmYWRiMjdjYjk1NmYxODk2ZDYwMmI0MDY3In19fQ=",
+              new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§cAbrir configurações").build()));
+            player.getInventory().setItem(7, BukkitUtils.putProfileOnSkull(
+              "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjJkMTQ1YzkzZTVlYWM0OGE2NjFjNmYyN2ZkYWZmNTkyMmNmNDMzZGQ2MjdiZjIzZWVjMzc4Yjk5NTYxOTcifX19",
+              new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§aSalvar alterações").build()));
+
+            player.sendMessage("§aYAY!! Você ganhou os itens para configurar as bordas da área espera.");
+            player.closeInventory();
           } else if (display.equalsIgnoreCase("§c♜ §7Localizações")) {
             player.getInventory().clear();
             player.updateInventory();
@@ -50,6 +70,7 @@ public class MainPainel extends PlayerMenu {
           } else if (display.equalsIgnoreCase("§a✎ §7Configurações do times")) {
             new TeamsMenu(getPlayer());
           } else if (display.equalsIgnoreCase("§e⎕ §7Bordas e proteção")) {
+            HylexPlayer.getByPlayer(player).setTemporaryLocation(new Location[2]);
             player.getInventory().clear();
             player.updateInventory();
 
@@ -79,26 +100,48 @@ public class MainPainel extends PlayerMenu {
             player.sendMessage("§aYAY!! Você ganhou os itens para criar/setar os geradores globais.");
             player.closeInventory();
           } else if (display.equalsIgnoreCase("§aSalvar arena")) {
-            if (ArenaController.getArena(((Arena)getAttached(0)).getArenaName()) == null) {
+            if (ArenaController.getArena(((Arena) getAttached(0)).getArenaName()) == null) {
               player.getInventory().clear();
               long delay = System.currentTimeMillis();
               ArenaController.saveArena((Arena) HylexPlayer.getByPlayer(player).getAbstractArena());
               player.sendMessage(
                 "§aYAY!! Você criou a arena " + HylexPlayer.getByPlayer(player).getAbstractArena().getArenaName() + "§8(" + (System.currentTimeMillis() - delay) + " ms)§a.");
-
-              HylexPlayer.getByPlayer(player.getPlayer()).setAbstractArena(null);
-
               player.closeInventory();
+              if (HylexPlayer.getByPlayer(player) != null) {
+                HylexPlayer hp = HylexPlayer.getByPlayer(player);
+                hp.setAbstractArena(null);
+
+                hp.setTemporaryLocation(new Location[2]);
+                if (hp.getArenaPlayer() != null && hp.getArenaPlayer().getArena() != null) {
+                  HylexPlayerController.setupHotbar(hp);
+                } else {
+                  player.getInventory().clear();
+                }
+              }
+
+
             } else {
               Arena arena = (Arena) getAttached(0);
               if (arena != null) {
                 long delay = System.currentTimeMillis();
                 ArenaController.saveExistentArena(arena);
                 player.sendMessage("§aYAY!! Você salvou a arena " + arena.getArenaName() + "§8(" + (System.currentTimeMillis() - delay) + " ms)§a.");
-                player.closeInventory();;
+                player.closeInventory();
+                if (HylexPlayer.getByPlayer(player) != null) {
+                  HylexPlayer hp = HylexPlayer.getByPlayer(player);
+                  hp.setAbstractArena(null);
+
+                  hp.setTemporaryLocation(new Location[2]);
+                  if (hp.getArenaPlayer() != null && hp.getArenaPlayer().getArena() != null) {
+                    HylexPlayerController.setupHotbar(hp);
+                  } else {
+                    player.getInventory().clear();
+                  }
+                }
               } else {
                 player.sendMessage("§cNâo foi possível salvar esta arena.");
-                player.closeInventory();;
+                player.closeInventory();
+                ;
               }
 
             }
@@ -118,6 +161,7 @@ public class MainPainel extends PlayerMenu {
         "  §a⤷ §7Mínimo de jogadores §f" + arena.getConfiguration().getMinPlayers(), "  §a⤷ §7Quantidade de jogadores por time §f" + arena.getConfiguration().getTeamsSize(),
         "  §a⤷ §7Quantidade de ilhas §f" + arena.getConfiguration().getIslands(), "  §b⤷ §7Quantidade de geradores globais §f" + arena.getGenerators().size(), "",
         " §b⦿ Bordas e proteção: ", "  §a⤷ §7Borda principal criada: " + (arena.getBorders() != null ? "§a§l✔" : "§c§l✖"),
+        "  §a⤷ §7Borda do local de espera: " + (arena.getWaitingLocationBorder() != null ? "§a§l✔" : "§c§l✖"),
         "  §a⤷ §7Quantidade áreas protegidas: §b" + arena.getCantConstruct().size(), "", " §c⚑ Localizações do mapa: ",
         "  §a⤷ §7Local de espera criado: " + (arena.getWaitingLocation() != null ? "§a§l✔" : "§c§l✖"),
         "  §a⤷ §7Local de espectar criado: " + (arena.getSpectatorLocation() != null ? "§a§l✔" : "§c§l✖")
@@ -146,6 +190,12 @@ public class MainPainel extends PlayerMenu {
     setItem(25,
       new ItemBuilder(Material.ANVIL).name("§b✉ §7Configurações essenciais").lore("", "§7Clique alterar as configurações essenciais.", "", "§e* Clique para aqui para configurar")
         .build());
+
+
+    setItem(31, new ItemBuilder(Material.ARMOR_STAND).name("§b★ §7Bordas da sala de espera §e§lNOVO")
+      .lore("", "§7Clique aqui para configurar a borda das área espera.", "", " §6- §7Borda da área de espera: " + (arena.getWaitingLocationBorder() != null ? "§a§l✔" : "§c§l✖"),
+        "  §8(Você ganhará itens para configurar)", "", "§e* Clique para aqui para configurar").build());
+
 
 
     setItem(43, BukkitUtils.putProfileOnSkull(

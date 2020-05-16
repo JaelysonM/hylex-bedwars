@@ -1,5 +1,6 @@
 package com.uzm.hylex.bedwars.listeners.server;
 
+import com.google.common.collect.Lists;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
@@ -23,8 +24,10 @@ import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ServerListener implements Listener {
+
 
   @EventHandler(priority = EventPriority.HIGHEST)
   public void onBlockPhysics(BlockPhysicsEvent evt) {
@@ -33,10 +36,15 @@ public class ServerListener implements Listener {
     }
   }
 
+
   @EventHandler
   public void onBlockFromTo(BlockFromToEvent evt) {
     if (evt.getBlock().getType() == Material.DRAGON_EGG) {
       evt.setCancelled(true);
+    } else if ((evt.getBlock().getType() == Material.WATER || evt.getBlock().getType() == Material.STATIONARY_WATER)) {
+      if (evt.getToBlock().getType() != Material.AIR) {
+        evt.setCancelled(true);
+      }
     }
   }
 

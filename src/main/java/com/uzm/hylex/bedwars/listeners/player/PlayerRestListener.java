@@ -1,14 +1,19 @@
 package com.uzm.hylex.bedwars.listeners.player;
 
+import com.google.common.collect.Lists;
 import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.Arena;
+import com.uzm.hylex.bedwars.arena.improvements.UpgradeType;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.arena.team.Team;
+import com.uzm.hylex.bedwars.utils.PlayerUtils;
 import com.uzm.hylex.core.api.HylexPlayer;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.items.ItemBuilder;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -23,6 +28,9 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.IN_GAME;
 
@@ -52,7 +60,8 @@ public class PlayerRestListener implements Listener {
 
   @EventHandler
   public void onPlayerDropItem(PlayerDropItemEvent evt) {
-    HylexPlayer hp = HylexPlayer.getByPlayer(evt.getPlayer());
+    Player player = evt.getPlayer();
+    HylexPlayer hp = HylexPlayer.getByPlayer(player);
     if (hp != null) {
       evt.setCancelled(hp.getAbstractArena() == null);
       ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
@@ -69,11 +78,23 @@ public class PlayerRestListener implements Listener {
               evt.setCancelled(true);
             } else {
               evt.setCancelled(false);
+              if (player.getFallDistance() > 0.0F) {
+                evt.setCancelled(true);
+                return;
+              }
             }
             if (item.getType().name().contains("_SWORD") && !item.getType().name().contains("WOOD_SWORD")) {
-              if (!hp.getPlayer().getInventory().containsAtLeast(new ItemStack(Material.WOOD_SWORD), 1)) {
-                hp.getPlayer().getInventory().addItem(new ItemStack(Material.WOOD_SWORD));
-              }
+              List<ItemStack> items = new ArrayList<ItemStack>(Lists.newArrayList(player.getInventory().getArmorContents()));
+              if (!PlayerUtils.containsSword(items) && !player.getInventory().contains(Material.WOOD_SWORD))
+                if (ap.getTeam() !=null) {
+                  if (ap.getTeam().hasUpgrade(UpgradeType.SHARPENED_SWORDS)) {
+                    player.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).enchant(Enchantment.DAMAGE_ALL, ap.getTeam().getTier(UpgradeType.SHARPENED_SWORDS)).build());
+                    player.updateInventory();
+                  }else {
+                    player.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).build());
+
+                  }
+                }
             }
           }
         }

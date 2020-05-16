@@ -8,15 +8,15 @@ import com.uzm.hylex.bedwars.controllers.MatchmakingController;
 import com.uzm.hylex.bedwars.menus.ItemShopMenu;
 import com.uzm.hylex.bedwars.menus.TrackerShopMenu;
 import com.uzm.hylex.bedwars.menus.UpgradeShopMenu;
+import com.uzm.hylex.bedwars.nms.NMS;
 import com.uzm.hylex.bedwars.proxy.ServerItem;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.libraries.npclib.api.NPC;
 import com.uzm.hylex.core.libraries.npclib.api.event.NPCRightClickEvent;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.EntityType;
@@ -71,7 +71,7 @@ public class PlayerInteractListener implements Listener {
             evt.setCancelled(true);
             if (item != null && evt.getAction().name().contains("RIGHT")) {
               if (item.getType() == Material.PAPER) {
-                MatchmakingController.findMatch(hp, arena.getConfiguration().getMode());
+                MatchmakingController.findMatch(hp, arena.getConfiguration().getMode().toUpperCase());
               } else if (item.getType() == Material.BED) {
                 ServerItem.getServerItem("lobby").connect(hp);
               }
@@ -83,12 +83,9 @@ public class PlayerInteractListener implements Listener {
                 if (!team.getMembers().contains(ap)) {
                   evt.setCancelled(true);
                   player.sendMessage("§cVocê não pode abrir este baú enquanto o time não estiver eliminado.");
-                  return;
                 }
               }
-            }
-
-            if (item != null && evt.getAction().name().contains("RIGHT")) {
+            } else if (item != null && evt.getAction().name().contains("RIGHT")) {
               if (item.getType().name().contains("WATER_BUCKET")) {
                 if (evt.getClickedBlock() != null) {
                   Block block = evt.getClickedBlock();
@@ -103,24 +100,18 @@ public class PlayerInteractListener implements Listener {
                       .runTaskLaterAsynchronously(Core.getInstance(), () -> BukkitUtils.removeItem(player.getInventory(), Material.matchMaterial("BUCKET"), 1), 1);
                   }
                 }
-                return;
-              }
-
-              if (evt.getAction().name().contains("AIR") && item.getType().name().contains("FIREBALL")) {
-
-                Location eye =player.getEyeLocation();
+              } else if (evt.getAction().name().contains("AIR") && item.getType().name().contains("FIREBALL")) {
+                //  Fireball fire = NMS.createFireball(player);
+                // fire.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), true));
+                Location eye = player.getEyeLocation();
                 Location loc = eye.add(eye.getDirection().multiply(1.2));
                 Fireball f = (Fireball) loc.getWorld().spawnEntity(loc, EntityType.FIREBALL);
-                f.setVelocity(loc.getDirection().normalize().multiply(0.5));
                 f.setShooter(player);
-                f.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), true));
-
-               player.playSound(player.getLocation(), Sound.GHAST_FIREBALL, 1.0F, 1.0F);
+                f.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), player));
                 BukkitUtils.removeItem(player.getInventory(), item.getType(), 1);
-                return;
               }
 
-              if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+             else if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
                 if (item.getItemMeta().getDisplayName().equals("§aRastreador")) {
                   new TrackerShopMenu(ap);
                 }

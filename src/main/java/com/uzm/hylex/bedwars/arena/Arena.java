@@ -9,6 +9,7 @@ import com.uzm.hylex.bedwars.arena.management.ArenaConfiguration;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.arena.team.Team;
 import com.uzm.hylex.bedwars.arena.team.Teams;
+import com.uzm.hylex.bedwars.controllers.HylexPlayerController;
 import com.uzm.hylex.bedwars.proxy.ServerItem;
 import com.uzm.hylex.bedwars.utils.PlayerUtils;
 import com.uzm.hylex.core.api.HylexPlayer;
@@ -16,12 +17,12 @@ import com.uzm.hylex.core.api.interfaces.Enums;
 import com.uzm.hylex.core.api.interfaces.IArena;
 import com.uzm.hylex.core.api.interfaces.IArenaPlayer;
 import com.uzm.hylex.core.controllers.TagController;
-import com.uzm.hylex.core.java.util.ConfigurationCreator;
+import com.uzm.hylex.core.java.util.configuration.ConfigurationCreator;
 import com.uzm.hylex.core.nms.NMS;
 import com.uzm.hylex.core.spigot.features.TabColor;
 import com.uzm.hylex.core.spigot.features.Titles;
 import com.uzm.hylex.core.spigot.location.LocationSerializer;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import com.uzm.hylex.core.utils.CubeId;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
@@ -59,6 +60,7 @@ public class Arena implements IArena {
   private ArenaTask mainTask;
   private ArenaBlocks blocks;
   private CubeId borders;
+  private CubeId waitingLocationBorder;
 
   private List<CubeId> cantConstruct = new ArrayList<>();
   private List<Generator> generators = new ArrayList<>();
@@ -79,6 +81,8 @@ public class Arena implements IArena {
 
       getCantConstruct().addAll(folder.get().getStringList("security.protected").stream().map(CubeId::new).collect(Collectors.toList()));
       this.borders = new CubeId(folder.get().getString("security.border"));
+      if (Objects.nonNull(folder.get().getString("security.waitingLocationBorder")))
+        this.waitingLocationBorder = new CubeId(folder.get().getString("security.waitingLocationBorder"));
       for (String teams : folder.get().getConfigurationSection("locations.teams").getKeys(false)) {
         ConfigurationSection team = folder.get().getConfigurationSection("locations.teams." + teams);
         Team t = this.teams.get(Teams.valueOf(teams.toUpperCase()));
@@ -105,14 +109,29 @@ public class Arena implements IArena {
       this.name = name;
       this.configuration = new ArenaConfiguration(4, 3, 4, 1);
 
-      for (int x = 0; x < getConfiguration().getIslands(); x++) {
+      for (int x = 0; x < Teams.values().length; x++) {
         teams.put(Teams.values()[x], new Team(Teams.values()[x]));
       }
     }
   }
 
+
+  public boolean canJoin(HylexPlayer hp) {
+    Player player = hp.getPlayer();
+
+    if (this.state == Enums.ArenaState.IN_GAME || this.state == Enums.ArenaState.END && this.getPlayingPlayers().size() + 1 > this.getConfiguration().getMaxPlayers()) {
+      player.sendMessage("§cNão existe partidas disponíveis no momento para o modo de jogo selecionado.");
+      return false;
+    }
+
+    return true;
+  }
+
   @Override
   public void join(HylexPlayer hp) {
+    hp.setupPlayer();
+    HylexPlayerController.setupHotbar(hp);
+
     Player player = hp.getPlayer();
 
     ArenaPlayer ap = new ArenaPlayer(player, this);
@@ -120,7 +139,7 @@ public class Arena implements IArena {
 
     this.arenaPlayers.add(ap);
 
-    TagController tag = TagController.get(player);
+    TagController tag = TagController.create(player);
     tag.setPrefix(hp.getGroup().getColor());
     tag.update();
 
@@ -128,7 +147,7 @@ public class Arena implements IArena {
       ap.setCurrentState(SPECTATING);
       ap.update();
 
-      player.teleport(this.getSpectatorLocation());
+      player.teleport(getSpectatorLocation());
       new TabColor(player).setHeader("\n §b§lHYLEX \n    §7Seja bem-vindo §E" + player.getName() + "§7." + "\n")
         .setBottom("\n §7Seu grupo é: " + hp.getGroup().getName() + "\n§7Você está em: §fBedWars - " + getArenaName() + "\n\n§b§nhylex.net§r \n ").send();
       return;
@@ -227,6 +246,7 @@ public class Arena implements IArena {
       hp.getBedWarsStatistics().addLong("deaths", "global");
       hp.getBedWarsStatistics().addLong("deaths", getConfiguration().getMode().toLowerCase());
       if (hpk != null) {
+        ((ArenaPlayer) hpk.getArenaPlayer()).addKills();
         hpk.getBedWarsStatistics().addLong("kills", "global");
         hpk.getBedWarsStatistics().addLong("kills", getConfiguration().getMode().toLowerCase());
       }
@@ -234,7 +254,7 @@ public class Arena implements IArena {
         player.setFireTicks(0);
         player.getActivePotionEffects().forEach(pe -> player.removePotionEffect(pe.getType()));
 
-        player.teleport(getWaitingLocation());
+        player.teleport(getBorders().getCenterLocation());
         getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(players -> players.hidePlayer(player));
 
         ap.setCurrentState(ArenaPlayer.CurrentState.RESPAWNING);
@@ -249,6 +269,7 @@ public class Arena implements IArena {
       hpk.getBedWarsStatistics().addLong("finalKills", "global");
       hpk.getBedWarsStatistics().addLong("finalKills", getConfiguration().getMode().toLowerCase());
       hpk.getBedWarsStatistics().addLong("coins", "global", 25);
+      ((ArenaPlayer) hpk.getArenaPlayer()).addFinalKill();
     }
     team.getAlive().remove(ap);
     if (team.getAlive().isEmpty()) {
@@ -262,10 +283,12 @@ public class Arena implements IArena {
         player.setFireTicks(0);
         player.getActivePotionEffects().forEach(pe -> player.removePotionEffect(pe.getType()));
 
+        player.teleport(getSpectatorLocation());
+
         ap.setCurrentState(ArenaPlayer.CurrentState.DEAD);
         ap.update();
-        this.check();
       }
+      this.check();
     }, 3);
   }
 
@@ -275,6 +298,7 @@ public class Arena implements IArena {
       ArenaPlayer breaker = (ArenaPlayer) hp.getArenaPlayer();
       hp.getBedWarsStatistics().addLong("bedsBroken", "global");
       hp.getBedWarsStatistics().addLong("bedsBroken", getConfiguration().getMode().toLowerCase());
+      ((ArenaPlayer) hp.getArenaPlayer()).addBedBroken();
 
       for (IArenaPlayer a : this.getPlayingPlayers()) {
         ArenaPlayer ap = (ArenaPlayer) a;
@@ -292,6 +316,15 @@ public class Arena implements IArena {
         player.playSound(player.getLocation(), Sound.ENDERDRAGON_GROWL, 1.0F, 1.0F);
       }
     }
+  }
+
+
+  public CubeId getWaitingLocationBorder() {
+    return waitingLocationBorder;
+  }
+
+  public void setWaitingLocationBorder(CubeId waitingLocationBorder) {
+    this.waitingLocationBorder = waitingLocationBorder;
   }
 
   public void start() {
@@ -318,9 +351,9 @@ public class Arena implements IArena {
         player.sendMessage("                  §e§n§lBed Wars");
         player.sendMessage("");
         player.sendMessage(" §7Proteja sua cama e destrua as camas inimigas.");
-        player.sendMessage(" §7Atualize você e sua equipe coletando");
-        player.sendMessage(" §7Ferro, Ouro, Esmeralda e Diamante de geradores");
-        player.sendMessage(" §7para acessar atualizações poderosas.");
+        player.sendMessage(" §7Adquira melhorias para você e sua equipe coletando");
+        player.sendMessage(" §fFerro§7, §6Ouro§7, §bDiamante§7, e §2Esmeralda §7dos geradores");
+        player.sendMessage(" §7para vencer a luta contra os seus oponentes.");
         player.sendMessage("");
         player.sendMessage("§a§m-------------------------------------------");
 
@@ -329,22 +362,24 @@ public class Arena implements IArena {
         ap.setCurrentState(ArenaPlayer.CurrentState.IN_GAME);
         ap.update();
 
-        TagController tag = TagController.get(ap.getPlayer());
-        tag.setOrder(ap.getTeam().getTeamType().getOrder());
-        tag.setPrefix(ap.getTeam().getTeamType().getScoreboardName() + " ");
-        tag.setSuffix("");
-        tag.update();
+        TagController.remove(player);
+        ap.getTeam().registerTeam(getArenaName());
         player.setDisplayName(ap.getTeam().getTeamType().getTagColor() + player.getName());
 
+        player.closeInventory();
         player.getEnderChest().clear();
         player.teleport(ap.getTeam().getSpawnLocation());
         player.playSound(player.getLocation(), Sound.LEVEL_UP, 1.5F, 1.5F);
+
+        NMS.sendTitle(player, Titles.TitleType.BOTH, "§fLutem!", "§a§lBED WARS", 10, 10, 10);
       } else {
+        player.closeInventory();
         player.teleport(spectatorLocation);
       }
     });
 
     for (Team teams : listTeams()) {
+      teams.registerTeam(getArenaName());
       teams.enableHolograms();
       if (teams.getMembers().size() == 0) {
         teams.setSitation(Team.Sitation.ELIMINATED);
@@ -356,10 +391,26 @@ public class Arena implements IArena {
       teams.setSitation(Team.Sitation.STANDING);
       teams.addAlives();
     }
-
     this.check();
-  }
+    if (getWaitingLocationBorder() != null) {
+      new BukkitRunnable() {
+        @Override
+        public void run() {
+          for (int x = getWaitingLocationBorder().getXmin(); x <= getWaitingLocationBorder().getXmax(); x++) {
+            for (int y = getWaitingLocationBorder().getYmin(); y <= getWaitingLocationBorder().getYmax(); y++) {
+              for (int z = getWaitingLocationBorder().getZmin(); z <= getWaitingLocationBorder().getZmax(); z++) {
+                boolean remove = new Location(Bukkit.getWorld(getArenaName()), x, y, z).getBlock().getType() != Material.AIR;
+                if (remove)
+                  new Location(Bukkit.getWorld(getArenaName()), x, y, z).getBlock().setType(Material.AIR);
+              }
+            }
+          }
 
+        }
+      }.runTaskLater(Core.getInstance(), 20);
+    }
+
+  }
 
   public void check() {
     if (this.state == Enums.ArenaState.IN_GAME) {
@@ -373,21 +424,23 @@ public class Arena implements IArena {
     this.setState(Enums.ArenaState.END);
     this.mainTask.reset();
     if (team == null) {
-      getArenaPlayers().stream().map(a -> (ArenaPlayer) a).forEach(ap -> {
-        ap.setCurrentState(ArenaPlayer.CurrentState.DEAD);
+      getArenaPlayers().stream().filter(Objects::nonNull).map(a -> (ArenaPlayer) a).forEach(ap -> {
+        ap.setCurrentState(SPECTATING);
         ap.update();
         ap.getPlayer().sendMessage(" \n§7Não houve ganhadores, finalizando partida!\n ");
       });
     } else {
-      team.getMembers().forEach(ap -> {
+      team.getMembers().stream().filter(Objects::nonNull).forEach(ap -> {
         Player player = ap.getPlayer();
-
-        HylexPlayer hp = HylexPlayer.getByPlayer(player);
-        if (hp != null) {
-          hp.getBedWarsStatistics().addLong("wins", "global");
-          hp.getBedWarsStatistics().addLong("wins", getConfiguration().getMode().toLowerCase());
-          hp.getBedWarsStatistics().addLong("coins", "global", 100);
+        if (player != null) {
+          HylexPlayer hp = HylexPlayer.getByPlayer(player);
+          if (hp != null) {
+            hp.getBedWarsStatistics().addLong("wins", "global");
+            hp.getBedWarsStatistics().addLong("wins", getConfiguration().getMode().toLowerCase());
+            hp.getBedWarsStatistics().addLong("coins", "global", 100);
+          }
         }
+
 
         ap.setCurrentState(ArenaPlayer.CurrentState.DEAD);
         ap.update();
@@ -404,7 +457,7 @@ public class Arena implements IArena {
       @Override
       public void run() {
         if (time <= 0) {
-          getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(player -> ServerItem.getServerItem("lobby").connect(HylexPlayer.getByPlayer(player)));
+          Bukkit.getWorld(getArenaName()).getPlayers().forEach(player -> ServerItem.getServerItem("lobby").connect(HylexPlayer.getByPlayer(player)));
           Bukkit.getScheduler().scheduleSyncDelayedTask(Core.getInstance(), () -> {
             blocks.clearArena();
           }, 40L);
@@ -415,7 +468,7 @@ public class Arena implements IArena {
         if (team != null) {
           for (IArenaPlayer a : getArenaPlayers()) {
             ArenaPlayer ap = (ArenaPlayer) a;
-            if (ap.getTeam().equals(team)) {
+            if (ap.getTeam() != null && ap.getTeam().equals(team)) {
               Player player = ap.getPlayer();
               Firework fire = (Firework) player.getWorld().spawnEntity(player.getLocation(), EntityType.FIREWORK);
               FireworkMeta meta = fire.getFireworkMeta();
@@ -494,8 +547,14 @@ public class Arena implements IArena {
   }
 
   public Collection<Team> listTeams() {
+    return ImmutableList.copyOf(this.teams.values()).subList(0, (getConfiguration().getIslands()));
+  }
+
+  public Collection<Team> listAllTeams() {
     return ImmutableList.copyOf(this.teams.values());
   }
+
+
 
   public ConfigurationCreator getArchive() {
     return folder;
@@ -556,6 +615,6 @@ public class Arena implements IArena {
 
   public boolean isFullyConfigured(int teams) {
     return teams * getConfiguration().getTeamsSize() == getConfiguration()
-      .getMaxPlayers() && getSpectatorLocation() != null && getWaitingLocation() != null && getBorders() != null;
+      .getMaxPlayers() && getSpectatorLocation() != null && getWaitingLocation() != null && getBorders() != null && getWaitingLocationBorder() != null;
   }
 }

@@ -4,10 +4,10 @@ import com.google.common.collect.Lists;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
 import com.uzm.hylex.core.api.HylexPlayer;
-import com.uzm.hylex.core.java.util.FilesSize;
+import com.uzm.hylex.core.java.util.file.FilesSize;
 import com.uzm.hylex.core.spigot.inventories.PageablePlayerInventory;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
-import com.uzm.hylex.core.utils.BukkitUtils;
+import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -56,9 +56,9 @@ public class WorldsMenu extends PageablePlayerInventory {
   }
 
   public void click(Inventory inv, ItemStack item, int slot) {
-    if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§9Página anterior")) {
+    if (item.getType() == Material.ARROW && item.getItemMeta().getDisplayName().equalsIgnoreCase("§ePágina anterior")) {
       open(getPlayer(), getCurrent() - 1);
-    } else if (item.getType() == Material.SKULL_ITEM && item.getItemMeta().getDisplayName().startsWith("§9Próxima página")) {
+    } else if (item.getType() == Material.ARROW && item.getItemMeta().getDisplayName().equalsIgnoreCase("§ePágina posterior")) {
       open(getPlayer(), getCurrent() + 1);
     } else if (item.hasItemMeta()) {
       if (item.getItemMeta().hasDisplayName()) {

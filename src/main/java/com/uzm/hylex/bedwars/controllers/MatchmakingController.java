@@ -5,6 +5,9 @@ import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.proxy.ServerItem;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.api.interfaces.Enums;
+import com.uzm.hylex.core.api.party.PartyPlayer;
+import com.uzm.hylex.core.party.BukkitParty;
+import com.uzm.hylex.core.party.BukkitPartyManager;
 import com.uzm.hylex.core.utils.ProxyUtils;
 import com.uzm.hylex.services.lan.WebSocket;
 import org.bukkit.Bukkit;
@@ -50,14 +53,13 @@ public class MatchmakingController {
         data.put("body", arenas);
         socket.getSocket().emit("update-mini", data);
       }
-    }.runTaskTimerAsynchronously(Core.getInstance(), 0, 40);
+    }.runTaskTimerAsynchronously(Core.getInstance(), 0, 10);
 
     WebSocket socket = WebSocket.get("core-" + com.uzm.hylex.core.Core.SOCKET_NAME);
     socket.getSocket().on("join-mini", (args) -> {
       if (args[0] instanceof org.json.JSONObject) {
         try {
           org.json.simple.JSONObject response = (org.json.simple.JSONObject) new JSONParser().parse(args[0].toString());
-
           String mini = response.get("name").toString();
           JSONArray players = (JSONArray) response.get("players");
           for (Object object : players) {
@@ -69,16 +71,19 @@ public class MatchmakingController {
                 Arena arena = ArenaController.getArena(mini);
                 if (arena == null) {
                   ServerItem.getServerItem("lobby").connect(hp);
-                  return;
+                  continue;
                 }
 
                 if (hp.getArenaPlayer() != null) {
                   hp.getArenaPlayer().getArena().leave(hp);
                 }
-
-                Bukkit.getScheduler().runTask(Core.getInstance(), () -> arena.join(hp));
+                if (arena.canJoin(hp)) {
+                  hp.getPlayer().getInventory().setItem(1, null);
+                  hp.getPlayer().getActivePotionEffects().forEach(effect -> hp.getPlayer().removePotionEffect(effect.getType()));
+                  Bukkit.getScheduler().runTask(Core.getInstance(), () -> arena.join(hp));
+                }
               }
-              return;
+              continue;
             }
 
             MINI_QUEUE.put(name, mini);
@@ -96,6 +101,7 @@ public class MatchmakingController {
           org.json.simple.JSONObject response = (org.json.simple.JSONObject) new JSONParser().parse(args[0].toString());
           JSONArray players = (JSONArray) response.get("players");
 
+
           String mega = "";
           String mini = "";
           boolean matchFound = ((JSONObject) response.get("response")).get("type").toString().equals("Matchs found");
@@ -103,19 +109,33 @@ public class MatchmakingController {
             mini = ((JSONObject) response.get("matchFound")).get("name").toString();
             mega = ((JSONObject) response.get("matchFound")).get("attached").toString();
           }
-
+          BukkitParty party = null;
           for (Object object : players) {
-            String name = object.toString();
+            if ((party = BukkitPartyManager.getLeaderParty(object.toString())) != null) {
+              break;
+            }
+          }
+
+
+          if (party != null) {
+            Player leader = Bukkit.getPlayerExact(party.getLeader());
+            if (leader != null) {
+              if (matchFound) {
+                com.uzm.hylex.bedwars.utils.ProxyUtils.sendPartyMembers(leader, mega, mini);
+              } else {
+                leader.sendMessage("§cNão existem partidas disponíveis no momento para o modo de jogo selecionado.");
+              }
+            }
+          } else {
+            String name = players.get(0).toString();
             Player target = Bukkit.getPlayerExact(name);
             if (target != null) {
               HylexPlayer hp = HylexPlayer.getByPlayer(target);
               if (hp != null) {
                 if (!mega.equalsIgnoreCase(com.uzm.hylex.core.Core.SOCKET_NAME.replace("bedwars-", ""))) {
                   target.sendMessage(matchFound ? "§8Sendo enviado para " + mini + "..." : "§cNão existe partidas disponíveis no momento para o modo de jogo selecionado.");
-                  if (matchFound)  ProxyUtils.connect(hp, mega);
-                } else {
-                  hp.getPlayer().getInventory().setItem(1, null);
-                  hp.getPlayer().getActivePotionEffects().forEach(effect -> hp.getPlayer().removePotionEffect(effect.getType()));
+                  if (matchFound)
+                    ProxyUtils.connect(hp, mega);
                 }
               }
             }
@@ -131,6 +151,12 @@ public class MatchmakingController {
   public static void findMatch(HylexPlayer hp, String mode) {
     Player player = hp.getPlayer();
     if (player != null) {
+      BukkitParty party = BukkitPartyManager.getMemberParty(player.getName());
+      if (party != null && !party.isLeader(player.getName())) {
+        player.sendMessage("§cApenas o líder da Party pode buscar por partidas.");
+        return;
+      }
+
       if (DELAY.getOrDefault(player.getUniqueId(), 0L) > System.currentTimeMillis()) {
         return;
       }
@@ -139,9 +165,15 @@ public class MatchmakingController {
       JSONObject object = new JSONObject();
       object.put("minigame", "bedwars");
       JSONArray players = new JSONArray();
-      players.add(player.getName());
+      if (party != null) {
+        party.listMembers().stream().map(PartyPlayer::getName).forEach(players::add);
+      }else {
+        players.add(player.getName());
+      }
       object.put("players", players);
-      object.put("mode", mode.toUpperCase());
+
+
+      object.put("mode", mode);
       object.put("clientName", "core-" + com.uzm.hylex.core.Core.SOCKET_NAME);
       WebSocket.get("core-" + com.uzm.hylex.core.Core.SOCKET_NAME).getSocket().emit("search-arena", object);
     }

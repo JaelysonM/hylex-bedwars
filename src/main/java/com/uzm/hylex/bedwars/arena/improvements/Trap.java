@@ -23,9 +23,12 @@ public abstract class Trap {
   }
 
   public void onEnter(Team owner, ArenaPlayer ap) {
-    owner.setLastTrapped(ap.getPlayer());
-    owner.getMembers().forEach(
-      aps -> new Titles(aps.getPlayer(), Titles.TitleType.BOTH).setTopMessage("§c§lARMADILHA ATIVADA").setBottomMessage("§fUm jogador caiu na armadilha").send(20, 120, 20));
+    if (!ap.getCurrentState().isSpectating()) {
+      owner.setLastTrapped(ap.getPlayer());
+      owner.getMembers().forEach(
+        aps -> new Titles(aps.getPlayer(), Titles.TitleType.BOTH).setTopMessage("§c§lARMADILHA ATIVADA").setBottomMessage("§fUm jogador caiu na armadilha").send(20, 120, 20));
+
+    }
   }
 
   public String getIcon() {

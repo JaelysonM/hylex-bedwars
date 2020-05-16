@@ -5,7 +5,7 @@ import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.enums.BuyEnums;
 import com.uzm.hylex.bedwars.arena.improvements.UpgradeType;
 import com.uzm.hylex.bedwars.arena.improvements.Upgrades;
-import com.uzm.hylex.core.java.util.ConfigurationCreator;
+import com.uzm.hylex.core.java.util.configuration.ConfigurationCreator;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 

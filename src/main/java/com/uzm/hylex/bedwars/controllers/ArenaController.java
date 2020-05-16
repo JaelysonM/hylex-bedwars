@@ -4,9 +4,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.Arena;
+import com.uzm.hylex.bedwars.arena.enums.ArenaEnums;
 import com.uzm.hylex.bedwars.arena.team.Team;
-import com.uzm.hylex.bedwars.utils.Utils;
-import com.uzm.hylex.core.java.util.ConfigurationCreator;
+import com.uzm.hylex.core.api.interfaces.Enums;
+import com.uzm.hylex.core.java.util.configuration.ConfigurationCreator;
+import com.uzm.hylex.core.java.util.file.FileUtils;
 import com.uzm.hylex.core.spigot.location.LocationSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -22,7 +24,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.uzm.hylex.bedwars.Core.getInstance;
-import static com.uzm.hylex.bedwars.utils.VoidChunkGenerator.VOID_CHUNK_GENERATOR;
+import static com.uzm.hylex.core.spigot.utils.VoidChunkGenerator.VOID_CHUNK_GENERATOR;
 
 public class ArenaController {
 
@@ -41,14 +43,14 @@ public class ArenaController {
 
     if (!file.getParentFile().exists()) {
       file.getParentFile().mkdirs();
-    }
+    };
 
-    if ((world = Bukkit.getWorld(name)) != null) {
+    if ((world =Bukkit.getWorld(name)) != null) {
       Bukkit.unloadWorld(world, false);
+      FileUtils.deleteFile(new File(name));
     }
 
-    Utils.deleteFile(new File(name));
-    Utils.copyFiles(file, new File(name));
+    FileUtils.copyFiles(file, new File(name));
 
     WorldCreator wc = WorldCreator.name(name);
     wc.generator(VOID_CHUNK_GENERATOR);
@@ -98,7 +100,7 @@ public class ArenaController {
       section.set("shop", new LocationSerializer(teams.getShopLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
       section.set("upgrade", new LocationSerializer(teams.getUpgradeLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
       section.set("bedlocation", new LocationSerializer(teams.getBedLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
-      section.set("borders", teams.getBorder().toString());
+      section.set("borders", teams.getBorder().toString().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
       section.set("team-generators",
         teams.getTeamGenerators().stream().map(result -> new LocationSerializer(result).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()))
           .collect(Collectors.toList()));
@@ -108,13 +110,21 @@ public class ArenaController {
         .replace(interfaceArena.getWorldName(), interfaceArena.getArenaName())).collect(Collectors.toList()));
 
     creator.get().set("security.border", interfaceArena.getBorders().toString().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
+    creator.get().set("security.waitingLocationBorder", interfaceArena.getWaitingLocationBorder().toString().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
+
     creator.get().set("security.protected",
       interfaceArena.getCantConstruct().stream().map(result -> result.toString().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()))
         .collect(Collectors.toList()));
 
     arenas.putIfAbsent(interfaceArena.getArenaName(), interfaceArena);
+
+    Arena arena =arenas.getOrDefault(interfaceArena.getArenaName(), null);
+
+    arena.setState(Enums.ArenaState.IN_WAITING);
+    arena.setEventState(ArenaEnums.Events.IDLE);
+
     creator.save();
-    Utils.copyFiles(new File(interfaceArena.getWorldName()), new File(Core.getInstance().getDataFolder(), "backup/" + interfaceArena.getWorldName()), "playerdata", "stats",
+    FileUtils.copyFiles(new File(interfaceArena.getWorldName()), new File(Core.getInstance().getDataFolder(), "backup/" + interfaceArena.getWorldName()), "playerdata", "stats",
       "uid.dat");
   }
 
@@ -148,6 +158,8 @@ public class ArenaController {
         .replace(interfaceArena.getWorldName(), interfaceArena.getArenaName())).collect(Collectors.toList()));
 
     creator.get().set("security.border", interfaceArena.getBorders().toString().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
+    creator.get().set("security.waitingLocationBorder", interfaceArena.getWaitingLocationBorder().toString().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
+
     creator.get().set("security.protected",
       interfaceArena.getCantConstruct().stream().map(result -> result.toString().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()))
         .collect(Collectors.toList()));

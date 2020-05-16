@@ -3,6 +3,7 @@ package com.uzm.hylex.bedwars.listeners.player;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.controllers.TagController;
+import com.uzm.hylex.core.spigot.features.Titles;
 import com.uzm.hylex.core.spigot.scoreboards.AsyncScoreboard;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,5 +28,7 @@ public class PlayerQuitListener implements Listener  {
     }
     TagController.remove(player);
     player.getInventory().clear();
+
+    new Titles(player, Titles.TitleType.BOTH).setTopMessage("").setBottomMessage("").send(0, 10, 0);
   }
 }

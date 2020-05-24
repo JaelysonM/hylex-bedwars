@@ -19,6 +19,7 @@ import com.uzm.hylex.core.api.interfaces.IArenaPlayer;
 import com.uzm.hylex.core.controllers.TagController;
 import com.uzm.hylex.core.java.util.configuration.ConfigurationCreator;
 import com.uzm.hylex.core.nms.NMS;
+import com.uzm.hylex.core.spigot.features.ActionBar;
 import com.uzm.hylex.core.spigot.features.TabColor;
 import com.uzm.hylex.core.spigot.features.Titles;
 import com.uzm.hylex.core.spigot.location.LocationSerializer;
@@ -38,6 +39,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.uzm.hylex.bedwars.arena.player.ArenaPlayer.CurrentState.DEAD;
 import static com.uzm.hylex.bedwars.arena.player.ArenaPlayer.CurrentState.SPECTATING;
 
 public class Arena implements IArena {
@@ -115,6 +117,26 @@ public class Arena implements IArena {
     }
   }
 
+  public void destroy() {
+    this.name = null;
+    this.worldName = null;
+    this.configuration = null;
+    this.arenaPlayers.clear();
+    this.arenaPlayers = null;
+    this.state = null;
+    this.eventState = null;
+    this.teams.clear();
+    this.teams = null;
+    this.waitingLocation = null;
+    this.spectatorLocation = null;
+    this.folder = null;
+    this.mainTask = null;
+    this.blocks = null;
+    this.borders = null;
+    this.waitingLocationBorder = null;
+    this.cantConstruct.clear();
+    this.generators.clear();
+  }
 
   public boolean canJoin(HylexPlayer hp) {
     Player player = hp.getPlayer();
@@ -134,10 +156,15 @@ public class Arena implements IArena {
 
     Player player = hp.getPlayer();
 
-    ArenaPlayer ap = new ArenaPlayer(player, this);
+    ArenaPlayer ap = new ArenaPlayer(hp, this);
+    if (!this.arenaPlayers.contains(ap))
+      this.arenaPlayers.add(ap);
     hp.setArenaPlayer(ap);
 
-    this.arenaPlayers.add(ap);
+    if (hp.getBedWarsStatistics() == null) {
+      player.kickPlayer("§cOcorreu um erro enquanto você tentava entrar na sala.");
+      return;
+    }
 
     TagController tag = TagController.create(player);
     tag.setPrefix(hp.getGroup().getColor());
@@ -169,7 +196,7 @@ public class Arena implements IArena {
     new TabColor(player).setHeader("\n §b§lHYLEX \n    §7Seja bem-vindo §E" + player.getName() + "§7." + "\n")
       .setBottom("\n §7Seu grupo é: " + hp.getGroup().getName() + "\n§7Você está em: §fBedWars - " + getArenaName() + "\n\n§b§nhylex.net§r \n ").send();
     if (this.state != Enums.ArenaState.IN_GAME && this.state != Enums.ArenaState.END) {
-      this.arenaPlayers.stream().map(a -> ((ArenaPlayer) a).getPlayer())
+      getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer())
         .forEach(players -> players.sendMessage(player.getDisplayName() + " §eentrou! §a(" + this.arenaPlayers.size() + "/" + this.getConfiguration().getMaxPlayers() + ")"));
     }
   }
@@ -188,8 +215,8 @@ public class Arena implements IArena {
     }
 
     if (this.state != Enums.ArenaState.IN_GAME && this.state != Enums.ArenaState.END) {
-      this.arenaPlayers.stream().map(a -> ((ArenaPlayer) a).getPlayer())
-        .forEach(players -> players.sendMessage(player.getDisplayName() + " §csaiu! §a(" + this.arenaPlayers.size() + "/" + this.getConfiguration().getMaxPlayers() + ")"));
+      getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer())
+        .forEach(players -> players.sendMessage(player.getDisplayName() + " §csaiu! §a(" + getArenaPlayers().size() + "/" + this.getConfiguration().getMaxPlayers() + ")"));
     }
   }
 
@@ -198,6 +225,7 @@ public class Arena implements IArena {
   }
 
   public void kill(HylexPlayer hp, HylexPlayer hpk, Team.Sitation sitation) {
+
     Player player = hp.getPlayer();
     ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
 
@@ -214,6 +242,9 @@ public class Arena implements IArena {
 
     ArenaPlayer apk = hpk != null ? (ArenaPlayer) hpk.getArenaPlayer() : null;
     if (player.equals(killer) || apk == null || !this.equals(apk.getArena())) {
+      killer = null;
+    }
+    if (apk != null && !apk.getCurrentState().isInGame()) {
       killer = null;
     }
 
@@ -243,12 +274,16 @@ public class Arena implements IArena {
     this.arenaPlayers.stream().map(a -> ((ArenaPlayer) a).getPlayer())
       .forEach(players -> players.sendMessage(message + (sitation == Team.Sitation.BROKEN_BED ? " §b§lKILL FINAL!" : "")));
     if (sitation == Team.Sitation.STANDING) {
-      hp.getBedWarsStatistics().addLong("deaths", "global");
-      hp.getBedWarsStatistics().addLong("deaths", getConfiguration().getMode().toLowerCase());
+      if (hp.getBedWarsStatistics() != null) {
+        hp.getBedWarsStatistics().addLong("deaths", "global");
+        hp.getBedWarsStatistics().addLong("deaths", getConfiguration().getMode().toLowerCase());
+      }
       if (hpk != null) {
         ((ArenaPlayer) hpk.getArenaPlayer()).addKills();
-        hpk.getBedWarsStatistics().addLong("kills", "global");
-        hpk.getBedWarsStatistics().addLong("kills", getConfiguration().getMode().toLowerCase());
+        if (hp.getBedWarsStatistics() != null) {
+          hpk.getBedWarsStatistics().addLong("kills", "global");
+          hpk.getBedWarsStatistics().addLong("kills", getConfiguration().getMode().toLowerCase());
+        }
       }
       Bukkit.getScheduler().scheduleSyncDelayedTask(Core.getInstance(), () -> {
         player.setFireTicks(0);
@@ -262,17 +297,27 @@ public class Arena implements IArena {
       }, 3);
       return;
     }
+    if (hp.getBedWarsStatistics() != null) {
+      hp.getBedWarsStatistics().addLong("finalDeaths", "global");
+      hp.getBedWarsStatistics().addLong("finalDeaths", getConfiguration().getMode().toLowerCase());
+    }
 
-    hp.getBedWarsStatistics().addLong("finalDeaths", "global");
-    hp.getBedWarsStatistics().addLong("finalDeaths", getConfiguration().getMode().toLowerCase());
     if (hpk != null) {
-      hpk.getBedWarsStatistics().addLong("finalKills", "global");
-      hpk.getBedWarsStatistics().addLong("finalKills", getConfiguration().getMode().toLowerCase());
-      hpk.getBedWarsStatistics().addLong("coins", "global", 25);
+      if (hpk.getBedWarsStatistics() != null) {
+        hpk.getBedWarsStatistics().addLong("finalKills", "global");
+        hpk.getBedWarsStatistics().addLong("finalKills", getConfiguration().getMode().toLowerCase());
+        hpk.getBedWarsStatistics().addLong("coins", "global", 25);
+      }
+
+      if (killer != null) {
+        new ActionBar(killer).setMessage("§6+25 coins").send();
+        killer.sendMessage("§6Você ganhou 25 Bedwars Coins (Abate final)");
+      }
       ((ArenaPlayer) hpk.getArenaPlayer()).addFinalKill();
     }
     team.getAlive().remove(ap);
     if (team.getAlive().isEmpty()) {
+      team.breakBed();
       team.setSitation(Team.Sitation.ELIMINATED);
       getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(
         players -> players.sendMessage(" \n§f§lTIME ELIMINADO > §cO " + team.getTeamType().getTagColor() + "Time " + team.getTeamType().getName() + " §cfoi eliminado!\n "));
@@ -284,9 +329,13 @@ public class Arena implements IArena {
         player.getActivePotionEffects().forEach(pe -> player.removePotionEffect(pe.getType()));
 
         player.teleport(getSpectatorLocation());
-
-        ap.setCurrentState(ArenaPlayer.CurrentState.DEAD);
+        ap.setCurrentState(DEAD);
         ap.update();
+        ap.setCurrentState(SPECTATING);
+        ap.update();
+        ap.rewardSumary();
+
+
       }
       this.check();
     }, 3);
@@ -296,9 +345,15 @@ public class Arena implements IArena {
     team.breakBed();
     if (hp != null) {
       ArenaPlayer breaker = (ArenaPlayer) hp.getArenaPlayer();
-      hp.getBedWarsStatistics().addLong("bedsBroken", "global");
-      hp.getBedWarsStatistics().addLong("bedsBroken", getConfiguration().getMode().toLowerCase());
+      if (hp.getBedWarsStatistics() != null) {
+        hp.getBedWarsStatistics().addLong("bedsBroken", "global");
+        hp.getBedWarsStatistics().addLong("bedsBroken", getConfiguration().getMode().toLowerCase());
+        hp.getBedWarsStatistics().addLong("coins", "global", 40);
+      }
       ((ArenaPlayer) hp.getArenaPlayer()).addBedBroken();
+      new ActionBar(breaker.getPlayer()).setMessage("§6+40 coins").send();
+      breaker.getPlayer().sendMessage("§6Você ganhou 40 Bedwars Coins (Cama quebrada)");
+
 
       for (IArenaPlayer a : this.getPlayingPlayers()) {
         ArenaPlayer ap = (ArenaPlayer) a;
@@ -328,18 +383,23 @@ public class Arena implements IArena {
   }
 
   public void start() {
-    this.setState(Enums.ArenaState.IN_GAME);
-    this.setEventState(ArenaEnums.Events.DIAMOND_II);
-
     this.mainTask.reset();
     getGenerators().forEach(Generator::enable);
     getArenaPlayers().forEach(a -> {
       ArenaPlayer ap = (ArenaPlayer) a;
       Player player = ap.getPlayer();
 
+      ap.setStartedTime(System.currentTimeMillis());
+
+      player.setLevel((int) HylexPlayerController.getLevel(HylexPlayer.getByPlayer(player)));
+      player.setExp(((float) HylexPlayerController.getExp(HylexPlayer.getByPlayer(player)) / 5000.0F));
+
       HylexPlayer hp = HylexPlayer.getByPlayer(player);
-      hp.getBedWarsStatistics().addLong("games", "global");
-      hp.getBedWarsStatistics().addLong("games", getConfiguration().getMode().toLowerCase());
+      if (hp.getBedWarsStatistics() != null) {
+        hp.getBedWarsStatistics().addLong("games", "global");
+        hp.getBedWarsStatistics().addLong("games", getConfiguration().getMode().toLowerCase());
+      }
+
       if (ap.getCurrentState() != SPECTATING) {
         if (ap.getTeam() == null) {
           Team find = findTeam();
@@ -361,6 +421,8 @@ public class Arena implements IArena {
 
         ap.setCurrentState(ArenaPlayer.CurrentState.IN_GAME);
         ap.update();
+        ap.setExpEarned((int) hp.getBedWarsStatistics().getLong("exp", "global"));
+        ap.setCoinsEarned((int) hp.getBedWarsStatistics().getLong("coins", "global"));
 
         TagController.remove(player);
         ap.getTeam().registerTeam(getArenaName());
@@ -409,6 +471,8 @@ public class Arena implements IArena {
         }
       }.runTaskLater(Core.getInstance(), 20);
     }
+    this.setState(Enums.ArenaState.IN_GAME);
+    this.setEventState(ArenaEnums.Events.DIAMOND_II);
 
   }
 
@@ -432,18 +496,29 @@ public class Arena implements IArena {
     } else {
       team.getMembers().stream().filter(Objects::nonNull).forEach(ap -> {
         Player player = ap.getPlayer();
+
         if (player != null) {
           HylexPlayer hp = HylexPlayer.getByPlayer(player);
           if (hp != null) {
-            hp.getBedWarsStatistics().addLong("wins", "global");
-            hp.getBedWarsStatistics().addLong("wins", getConfiguration().getMode().toLowerCase());
-            hp.getBedWarsStatistics().addLong("coins", "global", 100);
+            if (hp.getBedWarsStatistics() != null) {
+              hp.getBedWarsStatistics().addLong("wins", "global");
+              hp.getBedWarsStatistics().addLong("wins", getConfiguration().getMode().toLowerCase());
+              hp.getBedWarsStatistics().addLong("coins", "global", 100);
+              hp.getBedWarsStatistics().addLong("exp", "global", 26 * team.getMembers().size());
+
+            }
+
+            new ActionBar(player).setMessage("§6+100 coins").send();
+            player.sendMessage("§6Você ganhou 100 Bedwars Coins (Vitória)");
+            player.sendMessage(
+              "§bVocê ganhou §f" + 26 * team.getMembers().size() + "§b de experiência do bedwars (" + (team.getMembers().size() == 1 ? "Vitória" : "Vitória em equipe") + ")");
           }
         }
 
 
-        ap.setCurrentState(ArenaPlayer.CurrentState.DEAD);
+        ap.setCurrentState(SPECTATING);
         ap.update();
+        ap.rewardSumary();
 
         NMS.sendTitle(player, Titles.TitleType.BOTH, "", "§6§lVITÓRIA", 10, 60, 10);
       });
@@ -460,6 +535,9 @@ public class Arena implements IArena {
           Bukkit.getWorld(getArenaName()).getPlayers().forEach(player -> ServerItem.getServerItem("lobby").connect(HylexPlayer.getByPlayer(player)));
           Bukkit.getScheduler().scheduleSyncDelayedTask(Core.getInstance(), () -> {
             blocks.clearArena();
+            arenaPlayers.clear();
+            teams.clear();
+
           }, 40L);
           cancel();
           return;
@@ -491,12 +569,14 @@ public class Arena implements IArena {
 
   @Override
   public List<IArenaPlayer> getArenaPlayers() {
-    return arenaPlayers;
+    return getState() == Enums.ArenaState.IN_GAME || getState() == Enums.ArenaState.END ?
+      this.arenaPlayers.stream().filter(ap -> ((ArenaPlayer) ap).getTeam() != null).collect(Collectors.toList()) :
+      this.arenaPlayers;
   }
 
   @Override
   public List<IArenaPlayer> getPlayingPlayers() {
-    return arenaPlayers.stream().map(a -> (ArenaPlayer) a)
+    return this.arenaPlayers.stream().map(a -> (ArenaPlayer) a)
       .filter(result -> result.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME || result.getCurrentState() == ArenaPlayer.CurrentState.RESPAWNING)
       .collect(Collectors.toList());
   }
@@ -547,14 +627,12 @@ public class Arena implements IArena {
   }
 
   public Collection<Team> listTeams() {
-    return ImmutableList.copyOf(this.teams.values()).subList(0, (getConfiguration().getIslands()));
-  }
-
-  public Collection<Team> listAllTeams() {
     return ImmutableList.copyOf(this.teams.values());
   }
 
-
+  public Collection<Team> listAllTeams() {
+    return ImmutableList.copyOf(this.teams.values()).subList(0, (getConfiguration().getIslands()));
+  }
 
   public ConfigurationCreator getArchive() {
     return folder;

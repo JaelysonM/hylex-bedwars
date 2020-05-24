@@ -6,6 +6,8 @@ import com.uzm.hylex.bedwars.Core;
 import org.bukkit.entity.Player;
 
 public class ProxyUtils {
+
+
   public static void sendPartyMembers(Player leader, String mega, String mini) {
     ByteArrayDataOutput out = ByteStreams.newDataOutput();
     out.writeUTF("SendPartyMembers");

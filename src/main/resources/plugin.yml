@@ -1,6 +1,7 @@
 author: Uzm Studio Inc.
 name: ${project.artifactId}
 version: ${project.version}
+api-version: 1.8.8
 depend:
   - hylex-core
   - hylex-services

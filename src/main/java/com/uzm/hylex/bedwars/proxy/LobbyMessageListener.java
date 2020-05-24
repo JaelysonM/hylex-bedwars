@@ -3,6 +3,7 @@ package com.uzm.hylex.bedwars.proxy;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
+
 import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -28,15 +29,13 @@ public class LobbyMessageListener implements org.bukkit.plugin.messaging.PluginM
               HylexPlayer hp = HylexPlayer.getByPlayer(player);
               if (hp != null) {
                 ServerItem.getServerItem("lobby").connect(hp);
-
               }
 
             }
           }
 
-
-
         } catch (Exception ignored) {}
+
       }
 
     }

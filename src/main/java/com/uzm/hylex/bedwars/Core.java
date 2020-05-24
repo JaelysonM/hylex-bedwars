@@ -1,11 +1,11 @@
 package com.uzm.hylex.bedwars;
 
 import com.uzm.hylex.bedwars.arena.player.ArenaEquipment;
-import com.uzm.hylex.bedwars.controllers.ArenaController;
 import com.uzm.hylex.bedwars.loaders.PluginLoader;
 import com.uzm.hylex.bedwars.proxy.BungeePluginMessageListener;
 import com.uzm.hylex.bedwars.proxy.LobbyMessageListener;
 import com.uzm.hylex.core.java.util.configuration.ConfigurationCreator;
+import com.uzm.hylex.services.lan.WebSocket;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -15,6 +15,7 @@ import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 
@@ -33,7 +34,6 @@ public class Core extends JavaPlugin {
   }
 
   public void onEnable() {
-    System.gc();
     long aux = System.currentTimeMillis();
 
     Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
@@ -90,6 +90,12 @@ public class Core extends JavaPlugin {
       .sendMessage("§b[Hylex Module: BedWars] §7Plugin §fdefinitivamente §7carregado com sucesso (§f" + (System.currentTimeMillis() - aux + " milisegundos§7)"));
 
     ArenaEquipment.woodSword();
+
+    JSONObject json = new JSONObject();
+    json.put("clientName", "core-" + com.uzm.hylex.core.Core.SOCKET_NAME);
+    WebSocket.get("core-" + com.uzm.hylex.core.Core.SOCKET_NAME).getSocket().emit("send-finished-restart", json);
+
+    Bukkit.getConsoleSender().sendMessage("§b[Hylex Module: Core] §7Send a finish restart");
   }
 
 

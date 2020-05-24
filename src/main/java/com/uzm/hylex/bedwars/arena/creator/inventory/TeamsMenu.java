@@ -69,25 +69,26 @@ public class TeamsMenu extends PageablePlayerInventory {
 
       HylexPlayer.getByPlayer(player).setAuxiler(team);
 
-      assert team != null;
-      player.getInventory().setItem(1, new ItemBuilder(Material.WOOD_AXE).name("§aSetar posições da borda da ilha §7(Esquerdo: Localização #1/Direito: Localização #2)").build());
-      player.getInventory().setItem(2, new ItemBuilder(Material.DROPPER).name("§eAdicionar gerador do time").build());
-      player.getInventory().setItem(3, new ItemBuilder(Material.COMPASS).name("§aSetar NPCs §7(Esquerdo: Altere o tipo/Direito: Loja/Direito+Shift: Melhorias)").build());
+      if (team != null) {
+        player.getInventory().setItem(1, new ItemBuilder(Material.WOOD_AXE).name("§aSetar posições da borda da ilha §7(Esquerdo: Localização #1/Direito: Localização #2)").build());
+        player.getInventory().setItem(2, new ItemBuilder(Material.DROPPER).name("§eAdicionar gerador do time").build());
+        player.getInventory().setItem(3, new ItemBuilder(Material.COMPASS).name("§aSetar NPCs §7(Esquerdo: Altere o tipo/Direito: Loja/Direito+Shift: Melhorias)").build());
 
 
-      player.getInventory().setItem(4,
-        new ItemBuilder(Material.STAINED_GLASS_PANE).durability(item.getDurability()).name("§aConfigurando o time: " + team.getDisplayName() + " §7(Clique para alterar)").build());
+        player.getInventory().setItem(4,
+          new ItemBuilder(Material.STAINED_GLASS_PANE).durability(item.getDurability()).name("§aConfigurando o time: " + team.getDisplayName() + " §7(Clique para alterar)").build());
 
-      player.getInventory().setItem(6, BukkitUtils.putProfileOnSkull(
-        "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTZjYzQ4NmMyYmUxY2I5ZGZjYjJlNTNkZDlhM2U5YTg4M2JmYWRiMjdjYjk1NmYxODk2ZDYwMmI0MDY3In19fQ=",
-        new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§cAbrir configurações").build()));
-      player.getInventory().setItem(7, BukkitUtils.putProfileOnSkull(
-        "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjJkMTQ1YzkzZTVlYWM0OGE2NjFjNmYyN2ZkYWZmNTkyMmNmNDMzZGQ2MjdiZjIzZWVjMzc4Yjk5NTYxOTcifX19",
-        new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§aSalvar alterações").build()));
-      player.closeInventory();
+        player.getInventory().setItem(6, BukkitUtils.putProfileOnSkull(
+          "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTZjYzQ4NmMyYmUxY2I5ZGZjYjJlNTNkZDlhM2U5YTg4M2JmYWRiMjdjYjk1NmYxODk2ZDYwMmI0MDY3In19fQ=",
+          new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§cAbrir configurações").build()));
+        player.getInventory().setItem(7, BukkitUtils.putProfileOnSkull(
+          "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjJkMTQ1YzkzZTVlYWM0OGE2NjFjNmYyN2ZkYWZmNTkyMmNmNDMzZGQ2MjdiZjIzZWVjMzc4Yjk5NTYxOTcifX19",
+          new ItemBuilder(Material.SKULL_ITEM).durability(3).name("§aSalvar alterações").build()));
+        player.closeInventory();
 
-      player.sendMessage("§aYAY!! Você ganhou os itens para configurar o time: " + team.getDisplayName() + "§a.");
-      HylexPlayer.getByPlayer(player).setTemporaryLocation(new Location[2]);
+        player.sendMessage("§aYAY!! Você ganhou os itens para configurar o time: " + team.getDisplayName() + "§a.");
+        HylexPlayer.getByPlayer(player).setTemporaryLocation(new Location[2]);
+      }
     }
   }
 

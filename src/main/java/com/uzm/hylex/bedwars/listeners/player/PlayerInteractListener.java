@@ -53,10 +53,20 @@ public class PlayerInteractListener implements Listener {
 
   @EventHandler
   public void onPlayerInteract(PlayerInteractEvent evt) {
+
+    ItemStack item = evt.getItem();
+
     Player player = evt.getPlayer();
 
     HylexPlayer hp = HylexPlayer.getByPlayer(player);
     if (hp != null) {
+      if (item != null && evt.getAction().name().contains("RIGHT")) {
+        if (hp.getArenaPlayer() == null) {
+          if (item.getType() == Material.BED) {
+            ServerItem.getServerItem("lobby").connect(hp);
+          }
+        }
+      }
       ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
       if (ap != null) {
         Arena arena = ap.getArena();
@@ -65,7 +75,7 @@ public class PlayerInteractListener implements Listener {
           return;
         }
 
-        ItemStack item = evt.getItem();
+
         if (arena != null) {
           if (arena.getState() != IN_GAME || ap.getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
             evt.setCancelled(true);
@@ -109,9 +119,7 @@ public class PlayerInteractListener implements Listener {
                 f.setShooter(player);
                 f.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), player));
                 BukkitUtils.removeItem(player.getInventory(), item.getType(), 1);
-              }
-
-             else if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+              } else if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
                 if (item.getItemMeta().getDisplayName().equals("§aRastreador")) {
                   new TrackerShopMenu(ap);
                 }

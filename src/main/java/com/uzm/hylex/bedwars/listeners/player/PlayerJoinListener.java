@@ -14,6 +14,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import static com.uzm.hylex.bedwars.controllers.MatchmakingController.MINI_QUEUE;
 
@@ -23,23 +24,28 @@ public class PlayerJoinListener implements Listener {
   public void onHylexPlayerLoad(HylexPlayerLoadEvent evt) {
     HylexPlayer hp = evt.getHylexPlayer();
 
-    Player player = hp.getPlayer();
-    if (MINI_QUEUE.containsKey(player.getName())) {
-      Arena arena = ArenaController.getArena(MINI_QUEUE.remove(player.getName()));
-      if (arena == null) {
-        ServerItem.getServerItem("lobby").connect(hp);
-        return;
-      }
+    new BukkitRunnable() {
+      @Override
+      public void run() {
+        Player player = hp.getPlayer();
+        if (MINI_QUEUE.containsKey(player.getName())) {
+          Arena arena = ArenaController.getArena(MINI_QUEUE.remove(player.getName()));
+          if (arena == null) {
+            ServerItem.getServerItem("lobby").connect(hp);
+            return;
+          }
 
-      Bukkit.getScheduler().runTask(Core.getInstance(), () -> arena.join(hp));
-    } else {
-      Bukkit.getScheduler().runTask(Core.getInstance(), () -> {
+          Bukkit.getScheduler().runTask(Core.getInstance(), () -> arena.join(hp));
+        } else {
+          Bukkit.getScheduler().runTask(Core.getInstance(), () -> {
 
-        for (Player players : Bukkit.getOnlinePlayers()) {
-          players.hidePlayer(player);
+            for (Player players : Bukkit.getOnlinePlayers()) {
+              players.hidePlayer(player);
+            }
+          });
         }
-      });
-    }
+      }
+    }.runTask(Core.getInstance());
   }
 
   @EventHandler

@@ -130,11 +130,15 @@ public class EntityTeamDragon extends EntityEnderDragon {
           }
         } else if (this.delay == 0) {
           this.delay = 100;
+
           Team target = canTarget.get(ThreadLocalRandom.current().nextInt(canTarget.size()));
-          this.target = ((CraftPlayer) target.getAlive().stream().filter(ap -> ap.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME).collect(Collectors.toList())
-            .get(ThreadLocalRandom.current().nextInt(target.getAlive().size())).getPlayer()).getHandle();
-        }
-        if (delay > 0) {
+          List<ArenaPlayer> apls = target.getAlive().stream().filter(ap -> ap.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME).collect(Collectors.toList());
+
+          if (!apls.isEmpty()) {
+            this.target = ((CraftPlayer) apls.get(ThreadLocalRandom.current().nextInt(target.getAlive().size())).getPlayer()).getHandle();
+          }
+
+        } if (delay > 0) {
           --delay;
         }
         if (this.target != null) {

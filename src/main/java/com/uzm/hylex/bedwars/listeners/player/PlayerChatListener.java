@@ -23,14 +23,14 @@ public class PlayerChatListener implements Listener {
       return;
     }
 
-    boolean shout = evt.getMessage().startsWith("/g");
+    boolean shout = evt.getMessage().startsWith("!g");
 
-    if (shout && evt.getMessage().trim().split("/g").length == 0 || evt.getMessage().trim().equalsIgnoreCase("/g"))  {
+    if (shout && evt.getMessage().trim().split("!g").length == 0 || evt.getMessage().trim().equalsIgnoreCase("!g"))  {
        evt.getPlayer().sendMessage("§cUse /g <mensagem>");
        evt.setCancelled(true);
        return;
     }
-    evt.setMessage(evt.getMessage().replace("/g", "").trim());
+    evt.setMessage(evt.getMessage().replace("!g", "").trim());
 
     Player player = evt.getPlayer();
     HylexPlayer hp = HylexPlayer.getByPlayer(player);

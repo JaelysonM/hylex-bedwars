@@ -1,6 +1,8 @@
 package com.uzm.hylex.bedwars.utils;
 
 import com.google.common.collect.Lists;
+import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
+import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -11,6 +13,14 @@ import java.util.Objects;
 public class PlayerUtils {
 
   public static void giveResources(Player player, Player killer) {
+    if (HylexPlayer.getByPlayer(killer) !=null) {
+      HylexPlayer hp = HylexPlayer.getByPlayer(killer);
+     if (hp.getArenaPlayer() !=null) {
+       if (!((ArenaPlayer)hp.getArenaPlayer()).getCurrentState().isInGame()) {
+         return;
+       }
+     }
+    }
     int iron = 0, gold = 0, diamond = 0, emerald = 0;
     for (ItemStack i : player.getInventory().getContents()) {
       if (i != null) {
@@ -27,8 +37,8 @@ public class PlayerUtils {
           iron += i.getAmount();
           killer.getInventory().addItem(i);
         } else if (i.getType() == Material.FIREBALL || i.getType() == Material.TNT || i.getType() == Material.GOLDEN_APPLE || i.getType() == Material.ENDER_PEARL) {
-          killer.getInventory().addItem(i);
-        }
+        killer.getInventory().addItem(i);
+      }
       }
     }
 

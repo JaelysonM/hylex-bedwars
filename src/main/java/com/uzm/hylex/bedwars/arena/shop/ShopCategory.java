@@ -39,12 +39,13 @@ public class ShopCategory {
         List<ShopItem.ShopItemTier> tiers = new ArrayList<>();
         for (String tier : section.getConfigurationSection(item + ".tiers").getKeys(false)) {
           ItemStack price = new ItemBuilder(section.getString(item + ".tiers." + tier + ".price")).build();
+          String name = section.getString(item + ".tiers." + tier + ".name");
           List<ItemStack> content = new ArrayList<>();
           for (String stack : section.getStringList(item + ".tiers." + tier + ".content")) {
             content.add(new ItemBuilder(stack).build());
           }
 
-          tiers.add(new ShopItem.ShopItemTier(price, content));
+          tiers.add(new ShopItem.ShopItemTier(price, content, name));
         }
 
         this.items.add(new ShopItem(this, item, lostOnDie, icon2, null, null, blocks, tiers));

@@ -4,9 +4,11 @@ import com.uzm.hylex.bedwars.Core;
 import com.uzm.hylex.bedwars.arena.enums.ArenaEnums;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.arena.team.Team;
+import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.api.interfaces.IArenaPlayer;
 import com.uzm.hylex.core.java.util.StringUtils;
 import com.uzm.hylex.core.nms.NMS;
+import com.uzm.hylex.core.spigot.features.ActionBar;
 import com.uzm.hylex.core.spigot.features.Titles;
 import com.uzm.hylex.core.utils.Utils;
 import org.bukkit.Sound;
@@ -21,6 +23,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.uzm.hylex.bedwars.arena.team.Team.Sitation.*;
@@ -63,6 +67,10 @@ public class ArenaTask {
     return time;
   }
 
+  public void setTime(int time) {
+    this.time = time;
+  }
+
   private static final DateFormat DF = new SimpleDateFormat("mm:ss");
   private static final DecimalFormat TRACKING_FORMAT = new DecimalFormat("###.#");
 
@@ -80,13 +88,13 @@ public class ArenaTask {
             team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a✔")));
         if (lines.size() == 8) {
           lines.add("");
-          lines.add("Abates: §a{kills}");
-          lines.add("Abates Finais: §a{fKills}");
-          lines.add("Camas Destruídas: §a{beds}");
+          lines.add(" Abates: §a{kills}");
+          lines.add(" Abates finais: §a{fKills}");
+          lines.add(" Camas destruídas: §a{beds}");
         }
         lines.add("");
         lines.add(" §bhylex.net");
-        getArena().getArenaPlayers().forEach(a -> {
+        getArena().getArenaPlayers().stream().filter(Objects::nonNull).forEach(a -> {
           ArenaPlayer ap = (ArenaPlayer) a;
           if (ap.getScoreboard() != null) {
             ap.getScoreboard().updateLines(lines.stream().map(result -> {
@@ -116,15 +124,29 @@ public class ArenaTask {
             team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a✔")));
         if (lines.size() == 8) {
           lines.add("");
-          lines.add("Abates: §a{kills}");
-          lines.add("Abates Finais: §a{fKills}");
-          lines.add("Camas Destruídas: §a{beds}");
+          lines.add(" Abates: §a{kills}");
+          lines.add(" Abates finais: §a{fKills}");
+          lines.add(" Camas destruídas: §a{beds}");
         }
         lines.add("");
         lines.add(" §bhylex.net");
-        getArena().getArenaPlayers().forEach(a -> {
+        getArena().getArenaPlayers().stream().forEach(a -> {
           ArenaPlayer ap = (ArenaPlayer) a;
           Player player = ap.getPlayer();
+          if (ap.getCurrentState().isInGame()) {
+            float totalTime = (System.currentTimeMillis() - ap.getStartedTime()) / 1000;
+
+            if (totalTime / 60 >= 1 && (totalTime / 60) % 2 == 0) {
+              player.sendMessage("§bVocê ganhou §f" + 25 + " §bde experiência do bedwars (Tempo jogado)");
+              if (HylexPlayer.getByPlayer(player) != null) {
+                HylexPlayer.getByPlayer(player).getBedWarsStatistics().addLong("exp", "global", 25);
+                HylexPlayer.getByPlayer(player).getBedWarsStatistics().addLong("coins", "global", 24);
+                new ActionBar(player).setMessage("§6+24 coins").send();
+                player.sendMessage("§6Você ganhou 24 Bedwars Coins (Tempo jogado)");
+              }
+            }
+          }
+
           if (ap.getScoreboard() != null) {
             ap.getScoreboard().updateLines(lines.stream().map(result -> {
               result = result.replace("{kills}", StringUtils.formatNumber(ap.getKills())).replace("{fKills}", StringUtils.formatNumber(ap.getFinalKills()))
@@ -166,13 +188,13 @@ public class ArenaTask {
         });
         lines.clear();
         if (getArena().getUpgradeState().getSubMessage() != null && getTime() == 60 * 5) {
-          getArena().getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(player -> player.sendMessage(
+          getArena().getArenaPlayers().stream().filter(a -> a != null).map(a -> ((ArenaPlayer) a).getPlayer()).forEach(player -> player.sendMessage(
             getArena().getUpgradeState().getSubMessage().replace("%s", String.valueOf(getTime() / 60)).replace("%format", (getTime() / 60 > 1 ? "minutos" : "minuto"))));
         }
 
         if (this.time == 0) {
           if (getArena().getUpgradeState() == ArenaEnums.Events.BED_DESTRUCTION) {
-            getArena().getArenaPlayers().stream().map(a -> (ArenaPlayer) a).forEach(ap -> {
+            getArena().getArenaPlayers().stream().filter(Objects::nonNull).map(a -> (ArenaPlayer) a).forEach(ap -> {
               Player player = ap.getPlayer();
               player.playSound(player.getLocation(), Sound.ENDERDRAGON_GROWL, 1.0F, 1.0F);
               NMS.sendTitle(player, Titles.TitleType.BOTH, "§fTodas as camas foram destruidas!", "§c§lCAMAS DESTRUÍDAS", 0, 60, 0);
@@ -188,7 +210,7 @@ public class ArenaTask {
             return;
           }
           getArena().setEventState(getArena().getUpgradeState().next());
-          getArena().getArenaPlayers().stream().map(a -> (ArenaPlayer) a).forEach(ap -> {
+          getArena().getArenaPlayers().stream().filter(Objects::nonNull).map(a -> (ArenaPlayer) a).forEach(ap -> {
             Player player = ap.getPlayer();
             player.sendMessage(getArena().getUpgradeState().getMessage());
           });

@@ -7,12 +7,13 @@ import com.uzm.hylex.core.spigot.features.Titles;
 import com.uzm.hylex.core.spigot.scoreboards.AsyncScoreboard;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class PlayerQuitListener implements Listener  {
 
-  @EventHandler
+  @EventHandler(priority = EventPriority.HIGHEST)
   public void onPlayerQuit(PlayerQuitEvent evt) {
     evt.setQuitMessage(null);
 
@@ -22,13 +23,12 @@ public class PlayerQuitListener implements Listener  {
       ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
       if (ap != null) {
         ap.getArena().leave(hp);
+
       }
       hp.save();
       hp.destroy();
     }
     TagController.remove(player);
     player.getInventory().clear();
-
-    new Titles(player, Titles.TitleType.BOTH).setTopMessage("").setBottomMessage("").send(0, 10, 0);
   }
 }

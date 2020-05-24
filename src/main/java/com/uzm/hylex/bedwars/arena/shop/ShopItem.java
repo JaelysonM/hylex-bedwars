@@ -1,5 +1,6 @@
 package com.uzm.hylex.bedwars.arena.shop;
 
+import com.uzm.hylex.bedwars.arena.enums.BuyEnums;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
@@ -14,6 +15,7 @@ public class ShopItem {
   private List<ItemStack> content;
   private List<String> block;
   private List<ShopItemTier> tiers;
+  private BuyEnums coinTrade;
 
   public ShopItem(ShopCategory category, String name, boolean lostOnDie, String icon, ItemStack price, List<ItemStack> content, List<String> block, List<ShopItemTier> tiers) {
     this.category = category;
@@ -24,6 +26,15 @@ public class ShopItem {
     this.content = content;
     this.block = block;
     this.tiers = tiers;
+    if (this.price != null) {
+      for (BuyEnums b : BuyEnums.values()) {
+        if (b.getMaterial() == price.getType()) {
+          this.coinTrade = b;
+          break;
+        }
+      }
+    }
+
   }
 
   public ShopCategory getCategory() {
@@ -44,6 +55,10 @@ public class ShopItem {
 
   public ItemStack getPrice() {
     return isTieable() ? getTier(1).getPrice() : price;
+  }
+
+  public BuyEnums getCoinTrade() {
+    return coinTrade;
   }
 
   public ItemStack getPrice(int tier) {
@@ -78,10 +93,27 @@ public class ShopItem {
 
     private ItemStack price;
     private List<ItemStack> content;
+    private String name;
+    private BuyEnums coinTrade;
 
-    public ShopItemTier(ItemStack price, List<ItemStack> content) {
+    public ShopItemTier(ItemStack price, List<ItemStack> content, String name) {
       this.price = price;
       this.content = content;
+      this.name = name;
+      for (BuyEnums b : BuyEnums.values()) {
+        if (b.getMaterial() == price.getType()) {
+          this.coinTrade = b;
+          break;
+        }
+      }
+    }
+
+    public BuyEnums getCoinTrade() {
+      return coinTrade;
+    }
+
+    public String getName() {
+      return name;
     }
 
     public ItemStack getPrice() {

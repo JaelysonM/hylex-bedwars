@@ -1,5 +1,6 @@
 package com.uzm.hylex.bedwars.menus;
 
+import com.uzm.hylex.bedwars.arena.improvements.UpgradeType;
 import com.uzm.hylex.bedwars.arena.player.ArenaEquipment;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.arena.shop.Shop;
@@ -15,12 +16,14 @@ import com.uzm.hylex.core.spigot.items.ItemBuilder;
 import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -115,6 +118,7 @@ public class ItemShopMenu extends PlayerMenu {
 
     HylexPlayer hp = HylexPlayer.getByPlayer(player);
 
+
     int id = 1;
     this.setItem(0, new ItemBuilder(Material.NETHER_STAR).name("§bCompra fazt").build());
     for (ShopCategory sc : Shop.listCategories()) {
@@ -132,7 +136,9 @@ public class ItemShopMenu extends PlayerMenu {
     if (category == null) {
       SLOTS.forEach(slot -> {
         if (!preferences.hasQuickBuy(slot)) {
-          this.setItem(slot, new ItemBuilder("STAINED_GLASS_PANE:14 : 1 : display=&cSlot vazio! : lore=&7Esse é um slot de Compra fazt!\n&bShift Clique &7em qualquer item na\n&7loja para adicioná-lo aqui.").build());
+          this.setItem(slot, new ItemBuilder(
+            "STAINED_GLASS_PANE:14 : 1 : display=&cSlot vazio! : lore=&7Esse é um slot de Compra fazt!\n&bShift Clique &7em qualquer item na\n&7loja para adicioná-lo aqui.")
+            .build());
           return;
         }
 
@@ -145,20 +151,45 @@ public class ItemShopMenu extends PlayerMenu {
             boolean maxTier = item.isTieable() && equipment.getTier(item) >= item.getMaxTier();
             int nextTier = maxTier ? item.getMaxTier() : equipment.getTier(item) + 1;
             String color = BukkitUtils.getCountFromMaterial(player.getInventory(), item.getPrice(nextTier).getType()) < item.getPrice(nextTier).getAmount() ? "&c" : "&a";
+            int tier = ap.getTeam().getTier(UpgradeType.REINFORCED_ARMOR);
+            int tierSwords = ap.getTeam().getTier(UpgradeType.SHARPENED_SWORDS);
+            ItemStack icon = new ItemBuilder(item.getIcon().replace("{priceFormat}", item.isTieable() ?
+              StringUtils.getFirstColor(item.getTier(nextTier).getCoinTrade().getDisplayName()) + item.getPrice(nextTier).getAmount() + " " + item.getTier(nextTier).getCoinTrade()
+                .getDisplayName() :
+              "").replace("{tierName}", item.isTieable() ? item.getTier(nextTier).getName() : "").replace("{protection}",
+              ap.getTeam().hasUpgrade(UpgradeType.REINFORCED_ARMOR) ? "§7* Proteção: §e" + (tier > 3 ? tier == 4 ? "IV" : "V" : StringUtils.repeat("I", tier)) : "&j")
+              .replace("{sharpness}", ap.getTeam().hasUpgrade(UpgradeType.REINFORCED_ARMOR) ?
+                "§7* Afiação: §e" + (tierSwords > 3 ? tierSwords == 4 ? "IV" : "V" : StringUtils.repeat("I", tierSwords)) :
+                "&j")
 
-            ItemStack icon = new ItemBuilder(item.getIcon().replace("{color}", color).replace("{price}", String.valueOf(item.getPrice(nextTier).getAmount()))
+
+              .replace("{color}", color).replace("{price}", String.valueOf(item.getPrice(nextTier).getAmount()))
               .replace("{tier}", nextTier > 3 ? nextTier == 4 ? "IV" : "V" : StringUtils.repeat("I", nextTier))).build();
             if (item.isTieable()) {
               icon.setType(item.getTier(nextTier).getContent().get(0).getType());
             }
             ItemMeta meta = icon.getItemMeta();
             List<String> lore = meta.getLore();
+            if (item.getCategory().getIcon().getType().name().contains("BOOTS") && ap.getTeam().hasUpgrade(UpgradeType.REINFORCED_ARMOR)) {
+              meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, false);
+              meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            } else if (item.getCategory().getIcon().getType().name().contains("SWORD") && ap.getTeam().hasUpgrade(UpgradeType.SHARPENED_SWORDS)) {
+              meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, false);
+              meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            } else if (item.isTieable() && item.getTier(nextTier).getContent().get(0).getEnchantments().size() > 0) {
+              meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, false);
+              meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
             lore.add("");
             lore.add("§bShift clique para remover");
             lore.add("§bna compra fazt!");
             lore.add("");
             if (equipment.cantBuy(item)) {
-              lore.add("§cVocê já possui este item!");
+              if (item.isTieable() && (equipment.getTier(item)) >= item.getMaxTier()) {
+                lore.add("§aMAXIMIZADO!");
+              } else {
+                lore.add("§cVocê já possui este item!");
+              }
             } else if ("&c".equals(color)) {
               lore.add("§cVocê não possui recursos suficientes!");
             } else {
@@ -185,14 +216,35 @@ public class ItemShopMenu extends PlayerMenu {
         boolean maxTier = item.isTieable() && equipment.getTier(item) >= item.getMaxTier();
         int nextTier = maxTier ? item.getMaxTier() : equipment.getTier(item) + 1;
         String color = BukkitUtils.getCountFromMaterial(player.getInventory(), item.getPrice(nextTier).getType()) < item.getPrice(nextTier).getAmount() ? "&c" : "&a";
+        int tier = ap.getTeam().getTier(UpgradeType.REINFORCED_ARMOR);
+        int tierSwords = ap.getTeam().getTier(UpgradeType.SHARPENED_SWORDS);
+        ItemStack icon = new ItemBuilder(item.getIcon().replace("{tierName}", item.isTieable() ? item.getTier(nextTier).getName() : "").replace("{protection}",
+          ap.getTeam().hasUpgrade(UpgradeType.REINFORCED_ARMOR) ? "§7* Proteção: §e" + (tier > 3 ? tier == 4 ? "IV" : "V" : StringUtils.repeat("I", tier)) : "&j")
+          .replace("{sharpness}", ap.getTeam().hasUpgrade(UpgradeType.REINFORCED_ARMOR) ?
+            "§7* Afiação: §e" + (tierSwords > 3 ? tierSwords == 4 ? "IV" : "V" : StringUtils.repeat("I", tierSwords)) :
+            "&j")
 
-        ItemStack icon = new ItemBuilder(item.getIcon().replace("{color}", color).replace("{price}", String.valueOf(item.getPrice(nextTier).getAmount()))
+          .replace("{color}", color).replace("{priceFormat}", item.isTieable() ?
+            StringUtils.getFirstColor(item.getTier(nextTier).getCoinTrade().getDisplayName()) + item.getPrice(nextTier).getAmount() + " " + item.getTier(nextTier).getCoinTrade()
+              .getDisplayName() :
+            "").replace("{price}", String.valueOf(item.getPrice(nextTier).getAmount()))
           .replace("{tier}", nextTier > 3 ? nextTier == 4 ? "IV" : "V" : StringUtils.repeat("I", nextTier))).build();
         if (item.isTieable()) {
           icon.setType(item.getTier(nextTier).getContent().get(0).getType());
         }
         ItemMeta meta = icon.getItemMeta();
         List<String> lore = meta.getLore();
+        if (item.getCategory().getIcon().getType().name().contains("BOOTS") && ap.getTeam().hasUpgrade(UpgradeType.REINFORCED_ARMOR)) {
+          meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, false);
+          meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        } else if (item.getCategory().getIcon().getType().name().contains("SWORD") && ap.getTeam().hasUpgrade(UpgradeType.SHARPENED_SWORDS)) {
+          meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, false);
+          meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        } else if (item.isTieable() && item.getTier(nextTier).getContent().get(0).getEnchantments().size() > 0) {
+          meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, false);
+          meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
+
         lore.add("");
         if (preferences.hasQuickBuy(categoryId + ":" + item.getName())) {
           lore.add("§bShift clique para remover");
@@ -202,7 +254,11 @@ public class ItemShopMenu extends PlayerMenu {
         lore.add("§bna compra fazt!");
         lore.add("");
         if (equipment.cantBuy(item)) {
-          lore.add("§cVocê já possui este item!");
+          if (item.isTieable() && (equipment.getTier(item)) >= item.getMaxTier()) {
+            lore.add("§aMAXIMIZADO!");
+          } else {
+            lore.add("§cVocê já possui este item!");
+          }
         } else if ("&c".equals(color)) {
           lore.add("§cVocê não possui recursos suficientes!");
         } else {

@@ -11,6 +11,7 @@ import com.uzm.hylex.core.libraries.holograms.HologramLibrary;
 import com.uzm.hylex.core.libraries.holograms.api.Hologram;
 import com.uzm.hylex.core.libraries.npclib.NPCLibrary;
 import com.uzm.hylex.core.libraries.npclib.api.NPC;
+import com.uzm.hylex.core.libraries.npclib.trait.LookClose;
 import com.uzm.hylex.core.spigot.items.ItemStackUtils;
 import com.uzm.hylex.core.spigot.utils.BukkitUtils;
 import com.uzm.hylex.core.utils.CubeId;
@@ -98,8 +99,12 @@ public class Team {
   public void breakBed() {
     this.setSitation(Sitation.BROKEN_BED);
     BukkitUtils.getBedNeighbor(this.bedLocation.getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(1,0,0).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(0,0,1).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(-1,0,0).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(0,0,1).getBlock()).breakNaturally(new ItemStack(Material.AIR));
     this.bedLocation.getBlock().breakNaturally(new ItemStack(Material.AIR));
-    this.alive.forEach(ap -> {
+    this.alive.stream().filter(Objects::nonNull).filter(ap -> ap.getPlayer() !=null).forEach(ap -> {
       HylexPlayer hp = HylexPlayer.getByPlayer(ap.getPlayer());
       if (hp != null) {
         hp.getBedWarsStatistics().addLong("bedsLost", "global");
@@ -125,6 +130,10 @@ public class Team {
     this.npcShop.data().set(NPC.GRAVITY, true);
     this.npcShop.data().set(NPC.PROFILE_NPC_SKIN, true);
     this.npcShop.data().set(NPC.HIDE_BY_TEAMS_KEY, true);
+    LookClose lookClose = new LookClose( this.npcShop);
+    lookClose.lookClose(true);
+    this.npcShop.addTrait(lookClose);
+
     this.npcShop.spawn(getShopLocation());
 
     this.hologramUpgrades = HologramLibrary.createHologram(getUpgradeLocation().add(0, 0.5, 0), true, "§b§lCLIQUE DIREITO", "§e§lMELHORIAS", "§e§lLOJA DE");
@@ -134,6 +143,9 @@ public class Team {
     this.npcUpgrades.data().set(NPC.PROFILE_NPC_SKIN, true);
     this.npcUpgrades.data().set(NPC.HIDE_BY_TEAMS_KEY, true);
     this.npcUpgrades.spawn(getUpgradeLocation());
+    LookClose lookClose2 = new LookClose( this.npcUpgrades);
+    lookClose2.lookClose(true);
+    this.npcUpgrades.addTrait(lookClose2);
   }
 
   public void disableHolograms() {

@@ -53,7 +53,7 @@ public class MatchmakingController {
         data.put("body", arenas);
         socket.getSocket().emit("update-mini", data);
       }
-    }.runTaskTimerAsynchronously(Core.getInstance(), 0, 10);
+    }.runTaskTimerAsynchronously(Core.getInstance(), 0, 5);
 
     WebSocket socket = WebSocket.get("core-" + com.uzm.hylex.core.Core.SOCKET_NAME);
     socket.getSocket().on("join-mini", (args) -> {
@@ -73,7 +73,6 @@ public class MatchmakingController {
                   ServerItem.getServerItem("lobby").connect(hp);
                   continue;
                 }
-
                 if (hp.getArenaPlayer() != null) {
                   hp.getArenaPlayer().getArena().leave(hp);
                 }
@@ -81,6 +80,10 @@ public class MatchmakingController {
                   hp.getPlayer().getInventory().setItem(1, null);
                   hp.getPlayer().getActivePotionEffects().forEach(effect -> hp.getPlayer().removePotionEffect(effect.getType()));
                   Bukkit.getScheduler().runTask(Core.getInstance(), () -> arena.join(hp));
+                }else {
+                  if (!target.hasPermission("hylex.staff")) {
+                    target.kickPlayer("§cOcorreu um erro enquanto você tentava entrar na sala.");
+                  }
                 }
               }
               continue;
@@ -93,6 +96,28 @@ public class MatchmakingController {
           ex.printStackTrace();
         }
       }
+    });
+
+    socket.getSocket().on("send-restart-server", (args) -> {
+        if (!(args[0] instanceof org.json.JSONObject)) {
+          return;
+        }
+        try {
+          JSONObject response = (JSONObject) new JSONParser().parse(args[0].toString());
+          String clientName = ((String) response.get("name")).replace("core-bedwars-", "");
+          Bukkit.getConsoleSender().sendMessage("§b[Hylex Module: Core] §7Restarting a permission " + clientName + " §f(AUTHORIZED FROM BUNGEE)");
+          new BukkitRunnable() {
+            @Override
+            public void run() {
+              Bukkit.shutdown();
+            }
+          }.runTask(Core.getInstance());
+
+        } catch (Exception ex) {
+          System.err.println("[Socket.io - ServerController ]  Não foi possível processar os dados recibos.");
+          ex.printStackTrace();
+        }
+
     });
 
     socket.getSocket().on("matchmaking-callback", (args) -> {
@@ -135,7 +160,7 @@ public class MatchmakingController {
                 if (!mega.equalsIgnoreCase(com.uzm.hylex.core.Core.SOCKET_NAME.replace("bedwars-", ""))) {
                   target.sendMessage(matchFound ? "§8Sendo enviado para " + mini + "..." : "§cNão existe partidas disponíveis no momento para o modo de jogo selecionado.");
                   if (matchFound)
-                    ProxyUtils.connect(hp, mega);
+                    ProxyUtils.connect(hp, mega, mini);
                 }
               }
             }

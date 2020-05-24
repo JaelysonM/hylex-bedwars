@@ -34,6 +34,7 @@ public class StartCommand implements CommandExecutor {
         if (ap.getArena().getState() == Enums.ArenaState.IN_WAITING || ap.getArena().getState() == Enums.ArenaState.PREPARE || ap.getArena()
           .getState() == Enums.ArenaState.STARTING) {
           ap.getArena().start();
+          ap.getArena().getMainTask().setTime(60 * 6);
           player.sendMessage("§aVocê forçou o início da arena.");
           return true;
         }

@@ -3,10 +3,10 @@ package com.uzm.hylex.bedwars.arena.enums;
 import org.bukkit.Material;
 
 public enum BuyEnums {
-  IRON("Ferro", "§7Ferro", Material.IRON_INGOT),
+  IRON("Ferro", "§fFerro", Material.IRON_INGOT),
   DIAMOND("Diamante", "§bDiamante", Material.DIAMOND),
-  EMERALD("Esmeralda", "§aEsmeralda", Material.DIAMOND),
-  GOLD("Ouro", "§eOuro", Material.DIAMOND);
+  EMERALD("Esmeralda", "§aEsmeralda", Material.EMERALD),
+  GOLD("Ouro", "§eOuro", Material.GOLD_INGOT);
 
   private String name;
   private String displayName;

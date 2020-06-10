@@ -1,9 +1,11 @@
 package com.uzm.hylex.bedwars;
 
 import com.uzm.hylex.bedwars.arena.player.ArenaEquipment;
+import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.loaders.PluginLoader;
 import com.uzm.hylex.bedwars.proxy.BungeePluginMessageListener;
 import com.uzm.hylex.bedwars.proxy.LobbyMessageListener;
+import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.java.util.configuration.ConfigurationCreator;
 import com.uzm.hylex.services.lan.WebSocket;
 import org.bukkit.Bukkit;
@@ -73,6 +75,23 @@ public class Core extends JavaPlugin {
         }
       }
     }.runTaskTimerAsynchronously(this, 0, 20);
+
+
+    new BukkitRunnable() {
+      @Override
+      public void run() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+          if (HylexPlayer.getByPlayer(player) != null) {
+            if (HylexPlayer.getByPlayer(player).getArenaPlayer() != null) {
+              ArenaPlayer ap = (ArenaPlayer) HylexPlayer.getByPlayer(player).getArenaPlayer();
+              if (ap.getScoreboard() != null) {
+                ap.getScoreboard().scrollTitle();
+              }
+            }
+          }
+        }
+      }
+    }.runTaskTimerAsynchronously(this, 0, 10);
 
     getServer().getConsoleSender().sendMessage("§b[Hylex Module: BedWars] §7Plugin §fessencialmente §7carregado com sucesso.");
     getServer().getConsoleSender().sendMessage("§eVersão: §f" + getDescription().getVersion() + " e criado por §f" + getDescription().getAuthors());

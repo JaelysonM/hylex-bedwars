@@ -3,9 +3,7 @@ package com.uzm.hylex.bedwars.nms;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.generators.Generator;
 import com.uzm.hylex.bedwars.arena.team.Team;
-import com.uzm.hylex.bedwars.nms.entity.EntityBedWarsFireball;
-import com.uzm.hylex.bedwars.nms.entity.EntityGenerator;
-import com.uzm.hylex.bedwars.nms.entity.EntityTeamDragon;
+import com.uzm.hylex.bedwars.nms.entity.*;
 import com.uzm.hylex.core.nms.reflections.Accessors;
 import com.uzm.hylex.core.nms.reflections.acessors.FieldAccessor;
 import net.minecraft.server.v1_8_R3.*;
@@ -40,10 +38,15 @@ public class NMS {
     CLASS_TO_ID.get(null).put(EntityBedWarsFireball.class, 12);
     CLASS_TO_ID.get(null).put(EntityGenerator.class, 30);
     CLASS_TO_ID.get(null).put(EntityTeamDragon.class, 63);
+    CLASS_TO_ID.get(null).put(EntityTeamIronGolem.class, 99);
+    CLASS_TO_ID.get(null).put(EntityTeamSilverfish.class, 60);
 
     CLASS_TO_NAME.get(null).put(EntityBedWarsFireball.class, "EntityBedWarsFireball");
     CLASS_TO_NAME.get(null).put(EntityGenerator.class, "EntityGenerator");
     CLASS_TO_NAME.get(null).put(EntityTeamDragon.class, "EntityTeamDragon");
+    CLASS_TO_NAME.get(null).put(EntityTeamIronGolem.class, "EntityTeamIronGolem");
+    CLASS_TO_NAME.get(null).put(EntityTeamSilverfish.class, "EntityTeamSilverfish");
+
   }
 
   public static EntityGenerator createGeneratorEntity(Generator generator) {
@@ -78,6 +81,25 @@ public class NMS {
       return dragon;
     }
 
+    return null;
+  }
+
+  public static EntityTeamIronGolem createIronGolem(Arena arena, Team team, Location location) {
+    EntityTeamIronGolem dragon = new EntityTeamIronGolem(arena, team);
+    dragon.setPosition(location.getX(), location.getY(), location.getZ());
+    if (dragon.world.addEntity(dragon, CreatureSpawnEvent.SpawnReason.CUSTOM)) {
+      return dragon;
+    }
+    return null;
+  }
+
+
+  public static EntityTeamSilverfish createSilverfish(Arena arena, Team team, Location location) {
+    EntityTeamSilverfish dragon = new EntityTeamSilverfish(arena, team);
+    dragon.setPosition(location.getX(), location.getY(), location.getZ());
+    if (dragon.world.addEntity(dragon, CreatureSpawnEvent.SpawnReason.CUSTOM)) {
+      return dragon;
+    }
     return null;
   }
 

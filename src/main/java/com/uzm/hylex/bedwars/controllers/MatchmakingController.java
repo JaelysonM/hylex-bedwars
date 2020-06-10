@@ -82,7 +82,7 @@ public class MatchmakingController {
                   Bukkit.getScheduler().runTask(Core.getInstance(), () -> arena.join(hp));
                 }else {
                   if (!target.hasPermission("hylex.staff")) {
-                    target.kickPlayer("§cOcorreu um erro enquanto você tentava entrar na sala.");
+                    target.kickPlayer(" \n§cOcorreu um erro enquanto você tentava entrar na sala.\n \n§cIsso ocorre normalmente quando o servidor ainda está despreparado para receber logins, aguarde um pouco e tente novamente.");
                   }
                 }
               }

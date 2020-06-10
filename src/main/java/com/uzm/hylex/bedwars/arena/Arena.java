@@ -33,14 +33,14 @@ import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.uzm.hylex.bedwars.arena.player.ArenaPlayer.CurrentState.DEAD;
-import static com.uzm.hylex.bedwars.arena.player.ArenaPlayer.CurrentState.SPECTATING;
+import static com.uzm.hylex.bedwars.arena.player.ArenaPlayer.CurrentState.*;
 
 public class Arena implements IArena {
 
@@ -48,7 +48,7 @@ public class Arena implements IArena {
   private String worldName;
 
   private ArenaConfiguration configuration;
-  private List<IArenaPlayer> arenaPlayers = new ArrayList<>();
+  private LinkedHashSet<IArenaPlayer> arenaPlayers = new LinkedHashSet<>();
 
   private Enums.ArenaState state;
   private ArenaEnums.Events eventState;
@@ -130,6 +130,9 @@ public class Arena implements IArena {
     this.waitingLocation = null;
     this.spectatorLocation = null;
     this.folder = null;
+    this.mainTask.destroy();
+    if (this.mainTask != null)
+      mainTask.cancel();
     this.mainTask = null;
     this.blocks = null;
     this.borders = null;
@@ -141,7 +144,8 @@ public class Arena implements IArena {
   public boolean canJoin(HylexPlayer hp) {
     Player player = hp.getPlayer();
 
-    if (this.state == Enums.ArenaState.IN_GAME || this.state == Enums.ArenaState.END && this.getPlayingPlayers().size() + 1 > this.getConfiguration().getMaxPlayers()) {
+    if ((this.state == Enums.ArenaState.IN_GAME || this.state == Enums.ArenaState.END || this.state == Enums.ArenaState.FULL) && this.getPlayingPlayers().size() + 1 > this
+      .getConfiguration().getMaxPlayers()) {
       player.sendMessage("§cNão existe partidas disponíveis no momento para o modo de jogo selecionado.");
       return false;
     }
@@ -157,26 +161,38 @@ public class Arena implements IArena {
     Player player = hp.getPlayer();
 
     ArenaPlayer ap = new ArenaPlayer(hp, this);
-    if (!this.arenaPlayers.contains(ap))
-      this.arenaPlayers.add(ap);
-    hp.setArenaPlayer(ap);
-
-    if (hp.getBedWarsStatistics() == null) {
-      player.kickPlayer("§cOcorreu um erro enquanto você tentava entrar na sala.");
-      return;
-    }
+    this.arenaPlayers.add(ap);
+     hp.setArenaPlayer(ap);
 
     TagController tag = TagController.create(player);
     tag.setPrefix(hp.getGroup().getColor());
     tag.update();
 
-    if (this.state == Enums.ArenaState.IN_GAME || this.state == Enums.ArenaState.END) {
+    if (this.state == Enums.ArenaState.IN_GAME || this.state == Enums.ArenaState.END || ((getState() == Enums.ArenaState.STARTING||getState() == Enums.ArenaState.PREPARE
+      ||getState() == Enums.ArenaState.IN_WAITING) && getArenaPlayers().size() > getConfiguration().getMaxPlayers())) {
       ap.setCurrentState(SPECTATING);
       ap.update();
 
       player.teleport(getSpectatorLocation());
-      new TabColor(player).setHeader("\n §b§lHYLEX \n    §7Seja bem-vindo §E" + player.getName() + "§7." + "\n")
-        .setBottom("\n §7Seu grupo é: " + hp.getGroup().getName() + "\n§7Você está em: §fBedWars - " + getArenaName() + "\n\n§b§nhylex.net§r \n ").send();
+      new TabColor(player).setHeader("\n §6§lREDE STONE \n    §7Seja bem-vindo §E" + player.getName() + "§7." + "\n")
+        .setBottom("\n §7Seu grupo é: " + hp.getGroup().getName() + "\n§7Você está em: §fBedWars - " + getArenaName() + "\n\n§6§nredstone.com§r \n ").send();
+      for (Player pls : Bukkit.getOnlinePlayers()) {
+        pls.hidePlayer(player);
+      }
+      return;
+
+    }
+    if (getPlayingPlayers().size() >= getConfiguration().getMaxPlayers()) {
+      setState(Enums.ArenaState.FULL);
+    }
+    if (getPlayingPlayers().size() < getConfiguration().getMaxPlayers() && getState() == Enums.ArenaState.FULL) {
+      setState(Enums.ArenaState.STARTING);
+    }
+    if (getMainTask().getTime() > 5 && this.arenaPlayers.size() == getConfiguration().getMinPlayers()) {
+      getMainTask().setTime(5);
+    }
+    if (hp.getBedWarsStatistics() == null) {
+      player.kickPlayer("§cOcorreu um erro enquanto você tentava entrar na sala.");
       return;
     }
 
@@ -193,8 +209,8 @@ public class Arena implements IArena {
       }
     }
 
-    new TabColor(player).setHeader("\n §b§lHYLEX \n    §7Seja bem-vindo §E" + player.getName() + "§7." + "\n")
-      .setBottom("\n §7Seu grupo é: " + hp.getGroup().getName() + "\n§7Você está em: §fBedWars - " + getArenaName() + "\n\n§b§nhylex.net§r \n ").send();
+    new TabColor(player).setHeader("\n §6§lREDE STONE \n    §7Seja bem-vindo §E" + player.getName() + "§7." + "\n")
+      .setBottom("\n §7Seu grupo é: " + hp.getGroup().getName() + "\n§7Você está em: §fBedWars - " + getArenaName() + "\n\n§6§nredestone.com§r \n ").send();
     if (this.state != Enums.ArenaState.IN_GAME && this.state != Enums.ArenaState.END) {
       getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer())
         .forEach(players -> players.sendMessage(player.getDisplayName() + " §eentrou! §a(" + this.arenaPlayers.size() + "/" + this.getConfiguration().getMaxPlayers() + ")"));
@@ -209,8 +225,13 @@ public class Arena implements IArena {
 
     this.arenaPlayers.remove(ap);
 
+    if (getPlayingPlayers().size() < getConfiguration().getMaxPlayers() && getState() == Enums.ArenaState.FULL) {
+      setState(Enums.ArenaState.STARTING);
+    }
+
     if (ap.getCurrentState().isInGame()) {
       List<HylexPlayer> hitters = hylexPlayer.getLastHitters();
+      ap.setCurrentState(IN_GAME);
       this.kill(hylexPlayer, hitters.size() > 0 ? hitters.get(0) : null, Team.Sitation.ELIMINATED);
     }
 
@@ -233,7 +254,7 @@ public class Arena implements IArena {
       return;
     }
 
-    if (ap.getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
+    if (ap.getCurrentState() != ArenaPlayer.CurrentState.IN_GAME)    {
       return;
     }
 
@@ -271,18 +292,24 @@ public class Arena implements IArena {
       }
     }
 
-    this.arenaPlayers.stream().map(a -> ((ArenaPlayer) a).getPlayer())
-      .forEach(players -> players.sendMessage(message + (sitation == Team.Sitation.BROKEN_BED ? " §b§lKILL FINAL!" : "")));
+    getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer())
+      .forEach(players -> {
+        if (players !=null)
+        players.sendMessage(message + (sitation == Team.Sitation.BROKEN_BED ? " §b§lKILL FINAL!" : ""));
+      })
+    ;
     if (sitation == Team.Sitation.STANDING) {
       if (hp.getBedWarsStatistics() != null) {
         hp.getBedWarsStatistics().addLong("deaths", "global");
-        hp.getBedWarsStatistics().addLong("deaths", getConfiguration().getMode().toLowerCase());
+        if (!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("1v1") &&!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2") )
+          hp.getBedWarsStatistics().addLong("deaths", getConfiguration().getMode().toLowerCase());
       }
       if (hpk != null) {
         ((ArenaPlayer) hpk.getArenaPlayer()).addKills();
         if (hp.getBedWarsStatistics() != null) {
           hpk.getBedWarsStatistics().addLong("kills", "global");
-          hpk.getBedWarsStatistics().addLong("kills", getConfiguration().getMode().toLowerCase());
+          if (!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("1v1")&& !getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2"))
+            hpk.getBedWarsStatistics().addLong("kills", getConfiguration().getMode().toLowerCase());
         }
       }
       Bukkit.getScheduler().scheduleSyncDelayedTask(Core.getInstance(), () -> {
@@ -299,13 +326,15 @@ public class Arena implements IArena {
     }
     if (hp.getBedWarsStatistics() != null) {
       hp.getBedWarsStatistics().addLong("finalDeaths", "global");
-      hp.getBedWarsStatistics().addLong("finalDeaths", getConfiguration().getMode().toLowerCase());
+      if (!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("1v1") &&!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2"))
+        hp.getBedWarsStatistics().addLong("finalDeaths", getConfiguration().getMode().toLowerCase());
     }
 
     if (hpk != null) {
       if (hpk.getBedWarsStatistics() != null) {
         hpk.getBedWarsStatistics().addLong("finalKills", "global");
-        hpk.getBedWarsStatistics().addLong("finalKills", getConfiguration().getMode().toLowerCase());
+        if (!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("1v1") && !getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2"))
+          hpk.getBedWarsStatistics().addLong("finalKills", getConfiguration().getMode().toLowerCase());
         hpk.getBedWarsStatistics().addLong("coins", "global", 25);
       }
 
@@ -315,27 +344,24 @@ public class Arena implements IArena {
       }
       ((ArenaPlayer) hpk.getArenaPlayer()).addFinalKill();
     }
-    team.getAlive().remove(ap);
-    if (team.getAlive().isEmpty()) {
-      team.breakBed();
-      team.setSitation(Team.Sitation.ELIMINATED);
-      getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(
-        players -> players.sendMessage(" \n§f§lTIME ELIMINADO > §cO " + team.getTeamType().getTagColor() + "Time " + team.getTeamType().getName() + " §cfoi eliminado!\n "));
-    }
-
     Bukkit.getScheduler().scheduleSyncDelayedTask(Core.getInstance(), () -> {
       if (player.isOnline()) {
         player.setFireTicks(0);
         player.getActivePotionEffects().forEach(pe -> player.removePotionEffect(pe.getType()));
 
         player.teleport(getSpectatorLocation());
-        ap.setCurrentState(DEAD);
-        ap.update();
-        ap.setCurrentState(SPECTATING);
-        ap.update();
-        ap.rewardSumary();
-
-
+      }
+      ap.setCurrentState(DEAD);
+      ap.update();
+      ap.setCurrentState(SPECTATING);
+      ap.update();
+      ap.rewardSumary();
+      team.updateAlive();
+      if (team.getAlive().isEmpty()) {
+        team.breakBed();
+        team.setSitation(Team.Sitation.ELIMINATED);
+        getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(
+          players -> players.sendMessage(" \n§f§lTIME ELIMINADO > §cO " + team.getTeamType().getTagColor() + "Time " + team.getTeamType().getName() + " §cfoi eliminado!\n "));
       }
       this.check();
     }, 3);
@@ -347,7 +373,8 @@ public class Arena implements IArena {
       ArenaPlayer breaker = (ArenaPlayer) hp.getArenaPlayer();
       if (hp.getBedWarsStatistics() != null) {
         hp.getBedWarsStatistics().addLong("bedsBroken", "global");
-        hp.getBedWarsStatistics().addLong("bedsBroken", getConfiguration().getMode().toLowerCase());
+        if (!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("1v1") && !getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2"))
+          hp.getBedWarsStatistics().addLong("bedsBroken", getConfiguration().getMode().toLowerCase());
         hp.getBedWarsStatistics().addLong("coins", "global", 40);
       }
       ((ArenaPlayer) hp.getArenaPlayer()).addBedBroken();
@@ -397,14 +424,17 @@ public class Arena implements IArena {
       HylexPlayer hp = HylexPlayer.getByPlayer(player);
       if (hp.getBedWarsStatistics() != null) {
         hp.getBedWarsStatistics().addLong("games", "global");
-        hp.getBedWarsStatistics().addLong("games", getConfiguration().getMode().toLowerCase());
+        if (!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("1v1") && !getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2"))
+          hp.getBedWarsStatistics().addLong("games", getConfiguration().getMode().toLowerCase());
       }
 
       if (ap.getCurrentState() != SPECTATING) {
         if (ap.getTeam() == null) {
           Team find = findTeam();
-          find.addMember(ap, false);
-          ap.setTeam(find);
+          if (find !=null) {
+            find.addMember(ap, false);
+            ap.setTeam(find);
+          }
         }
 
         player.sendMessage("§a§m-------------------------------------------");
@@ -445,15 +475,19 @@ public class Arena implements IArena {
       teams.enableHolograms();
       if (teams.getMembers().size() == 0) {
         teams.setSitation(Team.Sitation.ELIMINATED);
-        BukkitUtils.getBedNeighbor(teams.getBedLocation().getBlock()).breakNaturally(null);
-        teams.getBedLocation().getBlock().breakNaturally(null);
+        BukkitUtils.getBedNeighbor(teams.getBedLocation().getBlock()).breakNaturally(new ItemStack(Material.AIR));
+        BukkitUtils.getBedNeighbor(teams.getBedLocation().clone().add(1, 0, 0).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+        BukkitUtils.getBedNeighbor(teams.getBedLocation().clone().add(0, 0, 1).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+        BukkitUtils.getBedNeighbor(teams.getBedLocation().clone().add(-1, 0, 0).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+        BukkitUtils.getBedNeighbor(teams.getBedLocation().clone().add(0, 0, 1).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+        teams.getBedLocation().getBlock().breakNaturally(new ItemStack(Material.AIR));
         continue;
       }
 
       teams.setSitation(Team.Sitation.STANDING);
       teams.addAlives();
     }
-    this.check();
+
     if (getWaitingLocationBorder() != null) {
       new BukkitRunnable() {
         @Override
@@ -473,6 +507,8 @@ public class Arena implements IArena {
     }
     this.setState(Enums.ArenaState.IN_GAME);
     this.setEventState(ArenaEnums.Events.DIAMOND_II);
+
+    this.check();
 
   }
 
@@ -494,7 +530,7 @@ public class Arena implements IArena {
         ap.getPlayer().sendMessage(" \n§7Não houve ganhadores, finalizando partida!\n ");
       });
     } else {
-      team.getMembers().stream().filter(Objects::nonNull).forEach(ap -> {
+      team.getMembers().forEach(ap -> {
         Player player = ap.getPlayer();
 
         if (player != null) {
@@ -502,7 +538,8 @@ public class Arena implements IArena {
           if (hp != null) {
             if (hp.getBedWarsStatistics() != null) {
               hp.getBedWarsStatistics().addLong("wins", "global");
-              hp.getBedWarsStatistics().addLong("wins", getConfiguration().getMode().toLowerCase());
+              if (!getConfiguration().getMode().toLowerCase().equalsIgnoreCase("1v1") && !getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2"))
+                hp.getBedWarsStatistics().addLong("wins", getConfiguration().getMode().toLowerCase());
               hp.getBedWarsStatistics().addLong("coins", "global", 100);
               hp.getBedWarsStatistics().addLong("exp", "global", 26 * team.getMembers().size());
 
@@ -513,6 +550,8 @@ public class Arena implements IArena {
             player.sendMessage(
               "§bVocê ganhou §f" + 26 * team.getMembers().size() + "§b de experiência do bedwars (" + (team.getMembers().size() == 1 ? "Vitória" : "Vitória em equipe") + ")");
           }
+          NMS.sendTitle(player, Titles.TitleType.BOTH, "", "§6§lVITÓRIA", 10, 60, 10);
+
         }
 
 
@@ -520,10 +559,12 @@ public class Arena implements IArena {
         ap.update();
         ap.rewardSumary();
 
-        NMS.sendTitle(player, Titles.TitleType.BOTH, "", "§6§lVITÓRIA", 10, 60, 10);
       });
-      getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer())
-        .forEach(players -> players.sendMessage(" \n§7O " + team.getTeamType().getTagColor() + "Time " + team.getTeamType().getName() + " §7foi vitorioso!\n "));
+      getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(players -> {
+        if (players != null) {
+          players.sendMessage(" \n§7O " + team.getTeamType().getTagColor() + "Time " + team.getTeamType().getName() + " §7foi vitorioso!\n ");
+        }
+      });
     }
 
     new BukkitRunnable() {
@@ -569,16 +610,19 @@ public class Arena implements IArena {
 
   @Override
   public List<IArenaPlayer> getArenaPlayers() {
+    this.arenaPlayers.removeAll(Collections.singletonList(null));
     return getState() == Enums.ArenaState.IN_GAME || getState() == Enums.ArenaState.END ?
-      this.arenaPlayers.stream().filter(ap -> ((ArenaPlayer) ap).getTeam() != null).collect(Collectors.toList()) :
-      this.arenaPlayers;
+      this.arenaPlayers.stream().filter(ap -> ((ArenaPlayer) ap).getPlayer() != null).filter(ap -> ((ArenaPlayer) ap).getTeam() != null).collect(Collectors.toList()) :
+      this.arenaPlayers.stream().filter(ap -> ((ArenaPlayer) ap).getPlayer() != null).collect(Collectors.toList());
   }
 
   @Override
   public List<IArenaPlayer> getPlayingPlayers() {
-    return this.arenaPlayers.stream().map(a -> (ArenaPlayer) a)
-      .filter(result -> result.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME || result.getCurrentState() == ArenaPlayer.CurrentState.RESPAWNING)
-      .collect(Collectors.toList());
+
+    this.arenaPlayers.removeAll(Collections.singletonList(null));
+    return this.arenaPlayers.stream().map(a -> (ArenaPlayer) a).filter(a -> a.getPlayer() != null).filter(
+      result -> result.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME || result.getCurrentState() == ArenaPlayer.CurrentState.RESPAWNING || result
+        .getCurrentState() == ArenaPlayer.CurrentState.WAITING || result.getCurrentState() == DEAD).collect(Collectors.toList());
   }
 
   @Override
@@ -630,8 +674,8 @@ public class Arena implements IArena {
     return ImmutableList.copyOf(this.teams.values());
   }
 
-  public Collection<Team> listAllTeams() {
-    return ImmutableList.copyOf(this.teams.values()).subList(0, (getConfiguration().getIslands()));
+  public Collection<Team> listEachTeams() {
+    return ImmutableList.copyOf(this.teams.values()).stream().limit(getConfiguration().getIslands()).collect(Collectors.toList());
   }
 
   public ConfigurationCreator getArchive() {
@@ -692,7 +736,6 @@ public class Arena implements IArena {
   }
 
   public boolean isFullyConfigured(int teams) {
-    return teams * getConfiguration().getTeamsSize() == getConfiguration()
-      .getMaxPlayers() && getSpectatorLocation() != null && getWaitingLocation() != null && getBorders() != null && getWaitingLocationBorder() != null;
+    return teams == getConfiguration().getIslands() && getSpectatorLocation() != null && getWaitingLocation() != null && getBorders() != null && getWaitingLocationBorder() != null;
   }
 }

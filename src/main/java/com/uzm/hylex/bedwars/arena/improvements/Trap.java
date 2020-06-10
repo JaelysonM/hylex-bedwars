@@ -27,7 +27,11 @@ public abstract class Trap {
       if (ap.getPlayer() !=null) {
         owner.setLastTrapped(ap.getPlayer());
         owner.getMembers().forEach(
-          aps -> new Titles(aps.getPlayer(), Titles.TitleType.BOTH).setTopMessage("§c§lARMADILHA ATIVADA").setBottomMessage("§fUm jogador caiu na armadilha").send(20, 120, 20));
+          aps -> {
+            if (aps.getPlayer() !=null) {
+              new Titles(aps.getPlayer(), Titles.TitleType.BOTH).setTopMessage("§c§lARMADILHA ATIVADA").setBottomMessage("§fUm jogador caiu na armadilha").send(20, 120, 20);
+            }
+          });
 
       }
     }

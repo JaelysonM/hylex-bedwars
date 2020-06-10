@@ -142,7 +142,7 @@ public class ArenaEquipment {
             return;
           }
 
-          this.player.getInventory().addItem(is);
+          this.player.getInventory().addItem(is.clone());
         }
       });
     }
@@ -228,7 +228,7 @@ public class ArenaEquipment {
         return;
       }
 
-      player.getInventory().addItem(is);
+      player.getInventory().addItem(is.clone());
     });
   }
 

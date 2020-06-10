@@ -155,7 +155,7 @@ public class MainPainel extends PlayerMenu {
   public MainPainel(Player player, Arena arena) {
     super(player, "§7Configuração " + arena.getArenaName(), 5);
     attachObject(0, arena);
-    int teamCFS = (int) arena.listTeams().stream().filter(Team::isTotallyConfigured).count();
+    int teamCFS = (int) arena.listEachTeams().stream().filter(Team::isTotallyConfigured).count();
     setItem(4, new ItemBuilder(Material.PAPER).name("§bVisão geral da arena")
       .lore("", "§eInformações:", "", " §a✚ Configurações essenciais: ", "", "  §a⤷ §7Máximo de jogadores §f" + arena.getConfiguration().getMaxPlayers(),
         "  §a⤷ §7Mínimo de jogadores §f" + arena.getConfiguration().getMinPlayers(), "  §a⤷ §7Quantidade de jogadores por time §f" + arena.getConfiguration().getTeamsSize(),

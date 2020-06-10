@@ -94,7 +94,7 @@ public class ArenaController {
       .set("locations.map.waiting", new LocationSerializer(interfaceArena.getWaitingLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
     creator.get().set("locations.map.spectator",
       new LocationSerializer(interfaceArena.getSpectatorLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
-    for (Team teams : interfaceArena.listTeams()) {
+    for (Team teams : interfaceArena.listEachTeams()) {
       ConfigurationSection section = creator.get().createSection("locations.teams." + teams.getTeamType().toString().toUpperCase());
       section.set("spawn", new LocationSerializer(teams.getSpawnLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
       section.set("shop", new LocationSerializer(teams.getShopLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
@@ -142,7 +142,7 @@ public class ArenaController {
       .set("locations.map.waiting", new LocationSerializer(interfaceArena.getWaitingLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
     creator.get().set("locations.map.spectator",
       new LocationSerializer(interfaceArena.getSpectatorLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
-    for (Team teams : interfaceArena.listTeams()) {
+    for (Team teams : interfaceArena.listEachTeams()) {
       ConfigurationSection section = creator.get().createSection("locations.teams." + teams.getTeamType().toString().toUpperCase());
       section.set("spawn", new LocationSerializer(teams.getSpawnLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));
       section.set("shop", new LocationSerializer(teams.getShopLocation()).serialize().replace(interfaceArena.getWorldName(), interfaceArena.getArenaName()));

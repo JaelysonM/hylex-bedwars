@@ -15,7 +15,7 @@ public class ArenaConfiguration {
   }
 
   public String getMode() {
-    return this.teamsSize == 1 ? "Solo" : this.teamsSize == 2 ? "Dupla" : this.teamsSize == 3 ? "Trio" : "Squad";
+    return this.islands == 2 ? (this.teamsSize == 2 ? "2v2" : "1v1") : (this.teamsSize == 1 ? "Solo" : this.teamsSize == 2 ? "Dupla" : this.teamsSize == 3 ? "Trio" : "Squad");
   }
 
   public int getIslands() {

@@ -1,9 +1,11 @@
 package com.uzm.hylex.bedwars.arena.shop;
 
 import com.uzm.hylex.bedwars.arena.enums.BuyEnums;
+import com.uzm.hylex.core.spigot.items.ItemBuilder;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ShopItem {
 
@@ -12,12 +14,12 @@ public class ShopItem {
   private boolean lostOnDie;
   private String icon;
   private ItemStack price;
-  private List<ItemStack> content;
+  private List<String> content;
   private List<String> block;
   private List<ShopItemTier> tiers;
   private BuyEnums coinTrade;
 
-  public ShopItem(ShopCategory category, String name, boolean lostOnDie, String icon, ItemStack price, List<ItemStack> content, List<String> block, List<ShopItemTier> tiers) {
+  public ShopItem(ShopCategory category, String name, boolean lostOnDie, String icon, ItemStack price, List<String> content, List<String> block, List<ShopItemTier> tiers) {
     this.category = category;
     this.name = name;
     this.lostOnDie = lostOnDie;
@@ -74,7 +76,7 @@ public class ShopItem {
   }
 
   public List<ItemStack> getContent(int tier) {
-    return isTieable() ? getTier(tier).getContent() : content;
+    return isTieable() ? getTier(tier).getContent() : content.stream().map(s -> new ItemBuilder(s).build()).collect(Collectors.toList());
   }
 
   public boolean isTieable() {

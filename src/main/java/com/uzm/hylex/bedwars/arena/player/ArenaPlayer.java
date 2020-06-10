@@ -11,6 +11,7 @@ import com.uzm.hylex.core.nms.NMS;
 import com.uzm.hylex.core.spigot.features.Titles;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
 import com.uzm.hylex.core.spigot.scoreboards.AsyncScoreboard;
+import com.uzm.hylex.core.spigot.scoreboards.scroller.Scroller;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -45,12 +46,16 @@ public class ArenaPlayer implements IArenaPlayer {
     this.arena = arena;
     this.player = player.getPlayer();
     this.currentState = CurrentState.WAITING;
+    /*Scroller  scroller = new Scroller("§6§lBEDWARS", "§6", "§c", "§f", true, Scroller.ScrollType.FORWARD, "§c§lBEDWARS",
+      "§f§lBEDWARS","§c§lBEDWARS");
+      */
+
     this.setScoreboard(new AsyncScoreboard(player.getPlayer()));
   }
 
   public void setScoreboard(AsyncScoreboard scoreboard) {
     this.scoreboard = scoreboard;
-    this.scoreboard.updateTitle("§b§lBED WARS");
+    this.scoreboard.updateTitle("§6§lBEDWARS");
   }
 
   public void destroy() {

@@ -30,6 +30,7 @@ import org.bukkit.util.Vector;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.uzm.hylex.bedwars.arena.improvements.UpgradeType.HEAL_POOL;
 
@@ -99,16 +100,18 @@ public class Team {
   public void breakBed() {
     this.setSitation(Sitation.BROKEN_BED);
     BukkitUtils.getBedNeighbor(this.bedLocation.getBlock()).breakNaturally(new ItemStack(Material.AIR));
-    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(1,0,0).getBlock()).breakNaturally(new ItemStack(Material.AIR));
-    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(0,0,1).getBlock()).breakNaturally(new ItemStack(Material.AIR));
-    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(-1,0,0).getBlock()).breakNaturally(new ItemStack(Material.AIR));
-    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(0,0,1).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(1, 0, 0).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(0, 0, 1).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(-1, 0, 0).getBlock()).breakNaturally(new ItemStack(Material.AIR));
+    BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(0, 0, 1).getBlock()).breakNaturally(new ItemStack(Material.AIR));
     this.bedLocation.getBlock().breakNaturally(new ItemStack(Material.AIR));
-    this.alive.stream().filter(Objects::nonNull).filter(ap -> ap.getPlayer() !=null).forEach(ap -> {
+    this.alive.stream().filter(Objects::nonNull).filter(ap -> ap.getPlayer() != null).forEach(ap -> {
       HylexPlayer hp = HylexPlayer.getByPlayer(ap.getPlayer());
       if (hp != null) {
+        ArenaPlayer apC = (ArenaPlayer) hp.getArenaPlayer();
         hp.getBedWarsStatistics().addLong("bedsLost", "global");
-        hp.getBedWarsStatistics().addLong("bedsLost", ap.getArena().getConfiguration().getMode().toLowerCase());
+        if (!apC.getArena().getConfiguration().getMode().equalsIgnoreCase("1v1") && !apC.getArena().getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2"))
+          hp.getBedWarsStatistics().addLong("bedsLost", ap.getArena().getConfiguration().getMode().toLowerCase());
       }
     });
   }
@@ -130,7 +133,7 @@ public class Team {
     this.npcShop.data().set(NPC.GRAVITY, true);
     this.npcShop.data().set(NPC.PROFILE_NPC_SKIN, true);
     this.npcShop.data().set(NPC.HIDE_BY_TEAMS_KEY, true);
-    LookClose lookClose = new LookClose( this.npcShop);
+    LookClose lookClose = new LookClose(this.npcShop);
     lookClose.lookClose(true);
     this.npcShop.addTrait(lookClose);
 
@@ -143,7 +146,7 @@ public class Team {
     this.npcUpgrades.data().set(NPC.PROFILE_NPC_SKIN, true);
     this.npcUpgrades.data().set(NPC.HIDE_BY_TEAMS_KEY, true);
     this.npcUpgrades.spawn(getUpgradeLocation());
-    LookClose lookClose2 = new LookClose( this.npcUpgrades);
+    LookClose lookClose2 = new LookClose(this.npcUpgrades);
     lookClose2.lookClose(true);
     this.npcUpgrades.addTrait(lookClose2);
   }
@@ -214,7 +217,8 @@ public class Team {
   }
 
   public List<ArenaPlayer> getAlive() {
-    return this.alive;
+    return this.alive.stream().filter(ap -> ap.getPlayer() != null)
+      .filter(ap -> ap.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME || ap.getCurrentState() == ArenaPlayer.CurrentState.RESPAWNING).collect(Collectors.toList());
   }
 
   public Sitation getSitation() {
@@ -317,17 +321,25 @@ public class Team {
 
       this.alive.forEach(ap -> {
         Player player = ap.getPlayer();
-        if (getBorder().contains(player.getLocation())) {
-          if (!player.hasPotionEffect(PotionEffectType.REGENERATION)) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0));
+        if (player != null) {
+          if (getBorder().contains(player.getLocation())) {
+            if (!player.hasPotionEffect(PotionEffectType.REGENERATION)) {
+              player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0));
+            }
+          } else if (player.hasPotionEffect(PotionEffectType.REGENERATION)) {
+            player.removePotionEffect(PotionEffectType.REGENERATION);
           }
-        } else if (player.hasPotionEffect(PotionEffectType.REGENERATION)) {
-          player.removePotionEffect(PotionEffectType.REGENERATION);
         }
       });
     }
 
     this.tickGenerator(true);
+  }
+
+
+  public void updateAlive() {
+    this.alive = this.alive.stream().filter(ap -> ap.getPlayer() != null)
+      .filter(ap -> ap.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME || ap.getCurrentState() == ArenaPlayer.CurrentState.RESPAWNING).collect(Collectors.toList());
   }
 
   private void tickGenerator(boolean upgrade) {

@@ -24,6 +24,7 @@ import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -116,10 +117,18 @@ public class PlayerInteractListener implements Listener {
                 Location eye = player.getEyeLocation();
                 Location loc = eye.add(eye.getDirection().multiply(1.2));
                 Fireball f = (Fireball) loc.getWorld().spawnEntity(loc, EntityType.FIREBALL);
+                f.setVelocity(loc.getDirection().normalize().multiply(0.5));
                 f.setShooter(player);
                 f.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), player));
                 BukkitUtils.removeItem(player.getInventory(), item.getType(), 1);
-              } else if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+              }
+              else if (evt.getAction() == Action.RIGHT_CLICK_BLOCK && evt.getItem() != null && evt.getItem().getType() == Material.MONSTER_EGG) {
+                if (ap.getTeam()!=null) {
+                  NMS.createIronGolem(arena, ap.getTeam(), evt.getClickedBlock().getLocation());
+                  BukkitUtils.removeItem(player.getInventory(), item.getType(), 1);
+                }
+              }
+              else if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
                 if (item.getItemMeta().getDisplayName().equals("§aRastreador")) {
                   new TrackerShopMenu(ap);
                 }

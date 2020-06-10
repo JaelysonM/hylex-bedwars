@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.uzm.hylex.bedwars.arena.team.Team.Sitation.*;
@@ -53,11 +52,25 @@ public class ArenaTask {
     }
   }
 
+  public void destroy() {
+    time = 0;
+    if (task !=null)
+      task.cancel();
+
+    task =null;
+    arena =null;
+  }
+
   public void reset() {
     this.cancel();
     this.task = new BukkitRunnable() {
       @Override
       public void run() {
+        if (getArena() == null) {
+          cancel();
+          ArenaTask.this.cancel();
+          return;
+        }
         execute();
       }
     }.runTaskTimer(Core.getInstance(), 0, 20);
@@ -86,14 +99,14 @@ public class ArenaTask {
           " " + team.getTeamType().getScoreboardName() + " §f" + team.getTeamType().getName() + ": " + (team.getSitation() == ELIMINATED ?
             "§c✖" :
             team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a✔")));
-        if (lines.size() == 8) {
+        if (lines.size() <= 8) {
           lines.add("");
           lines.add(" Abates: §a{kills}");
           lines.add(" Abates finais: §a{fKills}");
           lines.add(" Camas destruídas: §a{beds}");
         }
         lines.add("");
-        lines.add(" §bhylex.net");
+        lines.add(" §6redestone.com");
         getArena().getArenaPlayers().stream().filter(Objects::nonNull).forEach(a -> {
           ArenaPlayer ap = (ArenaPlayer) a;
           if (ap.getScoreboard() != null) {
@@ -122,14 +135,14 @@ public class ArenaTask {
           " " + team.getTeamType().getScoreboardName() + " §f" + team.getTeamType().getName() + ": " + (team.getSitation() == ELIMINATED ?
             "§c✖" :
             team.getSitation() == BROKEN_BED ? ("§e" + team.getAlive().size()) : "§a✔")));
-        if (lines.size() == 8) {
+        if (lines.size() <= 8) {
           lines.add("");
           lines.add(" Abates: §a{kills}");
           lines.add(" Abates finais: §a{fKills}");
           lines.add(" Camas destruídas: §a{beds}");
         }
         lines.add("");
-        lines.add(" §bhylex.net");
+        lines.add(" §6redestone.com");
         getArena().getArenaPlayers().stream().forEach(a -> {
           ArenaPlayer ap = (ArenaPlayer) a;
           Player player = ap.getPlayer();
@@ -227,7 +240,7 @@ public class ArenaTask {
             if (ap.getScoreboard() != null) {
               ap.getScoreboard().updateLines(" §8[BedWars - " + getArena().getArenaName() + "]", "", " Mapa: §a" + StringUtils.removeNumbers(getArena().getWorldName()),
                 " Jogadores: §a" + getArena().getArenaPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(), "", " Aguardando...", "",
-                " Modo: §a" + getArena().getConfiguration().getMode(), "", " §bhylex.net");
+                " Modo: §a" + getArena().getConfiguration().getMode(), "", " §6redestone.com");
             }
           });
           if (this.time != 20) {
@@ -253,7 +266,7 @@ public class ArenaTask {
           if (ap.getScoreboard() != null) {
             ap.getScoreboard().updateLines(" §8[BedWars - " + getArena().getArenaName() + "]", "", " Mapa: §a" + Utils.removeNumbers(getArena().getWorldName()),
               " Jogadores: §a" + getArena().getArenaPlayers().size() + "/" + getArena().getConfiguration().getMaxPlayers(), "", " Iniciando em §a" + this.time + "s", "",
-              " Modo: §a" + getArena().getConfiguration().getMode(), "", " §bhylex.net");
+              " Modo: §a" + getArena().getConfiguration().getMode(), "", " §6redstone.com");
           }
         });
 

@@ -53,12 +53,9 @@ public class ShopCategory {
       }
 
       ItemStack price = new ItemBuilder(section.getString(item + ".price")).build();
-      List<ItemStack> content = new ArrayList<>();
-      for (String stack : section.getStringList(item + ".content")) {
-        content.add(new ItemBuilder(stack).build());
-      }
+ 
 
-      this.items.add(new ShopItem(this, item, lostOnDie, icon2, price, content, blocks, null));
+      this.items.add(new ShopItem(this, item, lostOnDie, icon2, price, section.getStringList(item + ".content"), blocks, null));
     }
   }
 

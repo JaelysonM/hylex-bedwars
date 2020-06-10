@@ -44,6 +44,7 @@ public class EntityTeamDragon extends EntityEnderDragon {
     super.t_();
   }
 
+
   private int delay;
 
   @Override

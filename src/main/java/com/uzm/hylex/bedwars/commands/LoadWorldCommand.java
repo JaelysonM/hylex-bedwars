@@ -26,7 +26,7 @@ public class LoadWorldCommand implements CommandExecutor {
     }
 
     if (!sender.hasPermission("hylex.bedwars.setup")) {
-      sender.sendMessage("§b[Hylex] §cSem §c§npermissão §cpara executar esse comando.");
+      sender.sendMessage("§b[Stone] §cSem §c§npermissão §cpara executar esse comando.");
       return true;
     }
 

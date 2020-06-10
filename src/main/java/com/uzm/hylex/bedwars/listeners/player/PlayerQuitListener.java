@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class PlayerQuitListener implements Listener  {
@@ -31,4 +32,22 @@ public class PlayerQuitListener implements Listener  {
     TagController.remove(player);
     player.getInventory().clear();
   }
+
+  @EventHandler(priority = EventPriority.HIGHEST)
+  public void onPlayerQuit(PlayerKickEvent evt) {
+    Player player = evt.getPlayer();
+    HylexPlayer hp = HylexPlayer.remove(player);
+    if (hp != null) {
+      ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
+      if (ap != null) {
+        ap.getArena().leave(hp);
+
+      }
+      hp.save();
+      hp.destroy();
+    }
+    TagController.remove(player);
+    player.getInventory().clear();
+  }
+
 }

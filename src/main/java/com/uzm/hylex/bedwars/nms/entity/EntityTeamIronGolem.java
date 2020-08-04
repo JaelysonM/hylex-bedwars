@@ -45,6 +45,11 @@ public class EntityTeamIronGolem extends EntityIronGolem {
     this.setCustomNameVisible(true);
   }
 
+
+  @Override
+  protected void dropDeathLoot(boolean flag, int i) {}
+
+
   @Override
   public void t_() {
     if (ticksLived >= 20 * 150) {
@@ -71,6 +76,7 @@ public class EntityTeamIronGolem extends EntityIronGolem {
     }
     super.t_();
   }
+
 
 
 /*

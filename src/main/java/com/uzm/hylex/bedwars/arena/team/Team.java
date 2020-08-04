@@ -2,11 +2,13 @@ package com.uzm.hylex.bedwars.arena.team;
 
 import com.google.common.collect.ImmutableList;
 import com.uzm.hylex.bedwars.Core;
+import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.improvements.Trap;
 import com.uzm.hylex.bedwars.arena.improvements.UpgradeType;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.core.api.Group;
 import com.uzm.hylex.core.api.HylexPlayer;
+import com.uzm.hylex.core.api.interfaces.IArenaPlayer;
 import com.uzm.hylex.core.libraries.holograms.HologramLibrary;
 import com.uzm.hylex.core.libraries.holograms.api.Hologram;
 import com.uzm.hylex.core.libraries.npclib.NPCLibrary;
@@ -24,8 +26,10 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scoreboard.NameTagVisibility;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -36,7 +40,7 @@ import static com.uzm.hylex.bedwars.arena.improvements.UpgradeType.HEAL_POOL;
 
 public class Team {
 
-  private List<ArenaPlayer> members = new ArrayList<>();
+  private HashSet<ArenaPlayer> members = new HashSet<>();
   private List<ArenaPlayer> alive = new ArrayList<>();
   private Location spawnLocation;
   private Location upgradeLocation;
@@ -79,14 +83,20 @@ public class Team {
   private org.bukkit.scoreboard.Team team;
 
   public void registerTeam(String prefix) {
+    if (this.team != null) {
+      this.team.unregister();
+    }
     this.team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(this.teamType.getOrder() + prefix);
     if (this.team == null) {
+
       this.team = Bukkit.getScoreboardManager().getMainScoreboard().registerNewTeam(this.teamType.getOrder() + prefix);
       this.team.setPrefix(this.teamType.getScoreboardName() + " ");
       this.team.setSuffix("");
+    } else {
+      this.team.getPlayers().forEach(result -> this.team.removePlayer(result));
+      this.team.setNameTagVisibility(NameTagVisibility.ALWAYS);
     }
-
-    this.members.forEach(ap -> {
+    getMembers().stream().filter(member -> member.getPlayer() != null).forEach(ap -> {
       if (!this.team.hasPlayer(ap.getPlayer())) {
         this.team.addPlayer(ap.getPlayer());
       }
@@ -110,8 +120,8 @@ public class Team {
       if (hp != null) {
         ArenaPlayer apC = (ArenaPlayer) hp.getArenaPlayer();
         hp.getBedWarsStatistics().addLong("bedsLost", "global");
-        if (!apC.getArena().getConfiguration().getMode().equalsIgnoreCase("1v1") && !apC.getArena().getConfiguration().getMode().toLowerCase().equalsIgnoreCase("2v2"))
-          hp.getBedWarsStatistics().addLong("bedsLost", ap.getArena().getConfiguration().getMode().toLowerCase());
+        if (Arena.MODES.contains(apC.getArena().getConfiguration().getMode().toLowerCase()))
+          hp.getBedWarsStatistics().addLong("bedsLost", apC.getArena().getConfiguration().getMode().toLowerCase());
       }
     });
   }
@@ -128,6 +138,7 @@ public class Team {
 
   public void enableHolograms() {
     this.hologramShop = HologramLibrary.createHologram(getShopLocation().add(0, 0.5, 0), true, "§b§lCLIQUE DIREITO", "§e§lITENS", "§e§lLOJA DE");
+
     this.npcShop = NPCLibrary.createNPC(EntityType.PLAYER, UUID.randomUUID().toString().replace("-", ""));
     this.npcShop.data().set("SHOP", "item");
     this.npcShop.data().set(NPC.GRAVITY, true);
@@ -212,7 +223,8 @@ public class Team {
     return shopLocation;
   }
 
-  public List<ArenaPlayer> getMembers() {
+  public HashSet<ArenaPlayer> getMembers() {
+    this.members.removeIf(ap -> ap.getPlayer() == null);
     return this.members;
   }
 
@@ -271,7 +283,13 @@ public class Team {
 
     Block teamBed = this.bedLocation.getBlock();
     Block neighbor = BukkitUtils.getBedNeighbor(teamBed);
-    return neighbor.equals(breakBlock) || teamBed.equals(breakBlock);
+    Block neighbor_1 = BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(1, 0, 0).getBlock());
+    Block neighbor_2 = BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(0, 0, 1).getBlock());
+    Block neighbor_3 = BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(-1, 0, 0).getBlock());
+    Block neighbor_4 = BukkitUtils.getBedNeighbor(this.bedLocation.clone().add(0, 0, 1).getBlock());
+
+    return neighbor.equals(breakBlock) || neighbor_1.equals(breakBlock) || neighbor_2.equals(breakBlock) || neighbor_3.equals(breakBlock) || neighbor_4
+      .equals(breakBlock) || neighbor.equals(breakBlock) || teamBed.equals(breakBlock);
   }
 
   public List<Trap> getTraps() {
@@ -284,12 +302,14 @@ public class Team {
 
   public void addMember(ArenaPlayer player, boolean notify) {
     if (notify) {
-      this.members.stream().map(ArenaPlayer::getPlayer)
+      getMembers().stream().map(ArenaPlayer::getPlayer)
         .forEach(result -> result.sendMessage("§7[§a!§7] " + Group.getColored(player.getPlayer()) + " §7entrou no seu time. (" + getTeamType().getDisplayName() + "§7)"));
     }
-    if (!this.members.contains(player)) {
-      this.members.add(player);
+    if (player.getTeam() != null) {
+      player.getTeam().getMembers().remove(player);
     }
+    getMembers().add(player);
+
   }
 
   public boolean isTotallyConfigured() {
@@ -305,19 +325,17 @@ public class Team {
   }
 
   public void addAlives() {
-    this.alive.addAll(this.members);
+    this.alive.addAll(getMembers());
   }
 
   private boolean tick;
 
   public void tick() {
     if (this.hasUpgrade(HEAL_POOL)) {
-      Bukkit.getScheduler().runTaskAsynchronously(Core.getInstance(), () -> {
-        for (int i = 0; i < 300; i++) {
-          Location l = getBorder().getRandomLocation();
-          l.getWorld().spigot().playEffect(l, Effect.HAPPY_VILLAGER);
-        }
-      });
+      for (int i = 0; i < 300; i++) {
+        Location l = getBorder().getRandomLocation();
+        l.getWorld().spigot().playEffect(l, Effect.HAPPY_VILLAGER);
+      }
 
       this.alive.forEach(ap -> {
         Player player = ap.getPlayer();
@@ -350,8 +368,8 @@ public class Team {
           break;
         }
         Item item = locs.getWorld().dropItem(locs, new ItemStack(Material.IRON_INGOT));
-        item.setPickupDelay(0);
-        item.setVelocity(new Vector());
+        item.setPickupDelay(20);
+        item.setVelocity(new Vector().setY(0.02));
       }
     } else {
       iron -= 0.5;
@@ -364,8 +382,8 @@ public class Team {
           break;
         }
         Item item = locs.getWorld().dropItem(locs, new ItemStack(Material.GOLD_INGOT));
-        item.setPickupDelay(0);
-        item.setVelocity(new Vector());
+        item.setPickupDelay(20);
+        item.setVelocity(new Vector().setY(0.02));
       }
     } else {
       gold -= 0.5;
@@ -380,8 +398,8 @@ public class Team {
             break;
           }
           Item item = locs.getWorld().dropItem(locs, new ItemStack(Material.EMERALD));
-          item.setPickupDelay(0);
-          item.setVelocity(new Vector());
+          item.setPickupDelay(20);
+          item.setVelocity(new Vector().setY(0.02));
         }
       } else {
         emerald -= 0.5;

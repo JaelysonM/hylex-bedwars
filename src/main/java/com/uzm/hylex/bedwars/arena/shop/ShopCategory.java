@@ -13,11 +13,13 @@ import java.util.List;
 public class ShopCategory {
 
   private String name;
+  private String key;
   private ItemStack icon;
   private List<ShopItem> items;
 
   public ShopCategory(String key) {
     FileConfiguration config = ConfigurationCreator.find("itemshop", Core.getInstance()).get();
+    this.key=key;
     this.name = config.getString("categories." + key + ".name");
     this.icon = new ItemBuilder(config.getString("categories." + key + ".icon")).build();
     this.items = new ArrayList<>();
@@ -57,6 +59,11 @@ public class ShopCategory {
 
       this.items.add(new ShopItem(this, item, lostOnDie, icon2, price, section.getStringList(item + ".content"), blocks, null));
     }
+  }
+
+
+  public String getKey() {
+    return key;
   }
 
   public String getName() {

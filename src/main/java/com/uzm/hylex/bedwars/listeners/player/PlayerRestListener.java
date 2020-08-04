@@ -86,11 +86,11 @@ public class PlayerRestListener implements Listener {
             if (item.getType().name().contains("_SWORD") && !item.getType().name().contains("WOOD_SWORD")) {
               List<ItemStack> items = new ArrayList<ItemStack>(Lists.newArrayList(player.getInventory().getArmorContents()));
               if (!PlayerUtils.containsSword(items) && !player.getInventory().contains(Material.WOOD_SWORD))
-                if (ap.getTeam() !=null) {
+                if (ap.getTeam() != null) {
                   if (ap.getTeam().hasUpgrade(UpgradeType.SHARPENED_SWORDS)) {
                     player.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).enchant(Enchantment.DAMAGE_ALL, ap.getTeam().getTier(UpgradeType.SHARPENED_SWORDS)).build());
                     player.updateInventory();
-                  }else {
+                  } else {
                     player.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).build());
 
                   }
@@ -139,7 +139,7 @@ public class PlayerRestListener implements Listener {
             evt.setCancelled(true);
           } else {
             Block block = evt.getBlock();
-            if (block.getType().name().contains("BED_BLOCK")) {
+            if (block.getType().name().contains("BED") && !block.getType().name().contains("ROCK")) {
               for (Team team : arena.listTeams()) {
                 if (team.isBed(block)) {
                   if (!team.equals(ap.getTeam())) {
@@ -149,6 +149,8 @@ public class PlayerRestListener implements Listener {
 
                   evt.setCancelled(true);
                   player.sendMessage("§cVocê não pode destruir a sua própria cama.");
+                }else {
+                  evt.setCancelled(true);
                 }
               }
             } else if (!arena.getBorders().contains(evt.getBlock().getLocation())) {

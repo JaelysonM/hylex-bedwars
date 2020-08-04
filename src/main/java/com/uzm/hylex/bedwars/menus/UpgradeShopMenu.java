@@ -57,7 +57,7 @@ public class UpgradeShopMenu extends PlayerMenu {
 
               BukkitUtils.removeItem(player.getInventory(), upgrade.getCoinTrade().getMaterial(), upgrade.getPrice(nextTier));
               team.evolve(upgrade.getType());
-              team.getAlive().stream().filter(ap -> ap.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME).forEach(ArenaPlayer::refresh);
+              team.getAlive().stream().filter(ap -> ap.getCurrentState() == ArenaPlayer.CurrentState.IN_GAME).forEach(ap -> ap.refresh(true));
 
               ap.getTeam().getAlive().stream().map(ArenaPlayer::getPlayer)
                 .forEach(players -> players.sendMessage(player.getDisplayName() + " §ecomprou §6" + StringUtils.stripColors(item.getItemMeta().getDisplayName())));

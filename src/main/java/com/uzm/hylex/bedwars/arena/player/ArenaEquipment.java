@@ -9,12 +9,10 @@ import com.uzm.hylex.bedwars.utils.PlayerUtils;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
 import com.uzm.hylex.core.spigot.utils.BukkitUtils;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
@@ -24,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.bukkit.Material.STONE;
 import static org.bukkit.Material.WOOD_SWORD;
 
 public class ArenaEquipment {
@@ -69,11 +68,18 @@ public class ArenaEquipment {
     this.compass = null;
     this.tracking = null;
     this.colorId = 0;
+    if (this.shopItems !=null)
     this.shopItems.clear();
     this.shopItems = null;
+    if (this.tiers !=null)
     this.tiers.clear();
     this.tiers = null;
   }
+
+  public void setDisableInvisibility( boolean b) {
+    this.disableInvisibility=b;
+  }
+
 
   private boolean disableInvisibility;
 
@@ -138,10 +144,11 @@ public class ArenaEquipment {
           if (is.getType().name().contains("WOOL") || is.getType().name().contains("STAINED_CLAY") || is.getType().name().contains("STAINED_GLASS")) {
             ItemStack clone = is.clone();
             clone.setDurability(colorId);
+            if (clone.getType() != STONE)
             this.player.getInventory().addItem(clone);
             return;
           }
-
+          if (is.clone().getType() != STONE)
           this.player.getInventory().addItem(is.clone());
         }
       });
@@ -269,24 +276,24 @@ public class ArenaEquipment {
         HylexPlayer hp = HylexPlayer.getByPlayer(pls);
         ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
         if (ap != null) {
-          if (ap.getCurrentState().isInGame()) {
-            if (PlayerUtils.containsSword(Lists.newArrayList(pls.getInventory().getContents())) && pls.getItemOnCursor().getType() != WOOD_SWORD) {
-              if (pls.getInventory().contains(WOOD_SWORD))
-                pls.getInventory().remove(WOOD_SWORD);
-            } else {
-              if (!pls.getInventory().contains(WOOD_SWORD) && pls.getItemOnCursor().getType() != WOOD_SWORD) {
-                if (ap.getTeam() != null) {
-                  if (ap.getTeam().hasUpgrade(UpgradeType.SHARPENED_SWORDS)) {
-                    pls.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).enchant(Enchantment.DAMAGE_ALL, ap.getTeam().getTier(UpgradeType.SHARPENED_SWORDS)).build());
-                    pls.updateInventory();
-                  } else {
-                    pls.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).build());
+          if (ap.getCurrentState() != null) {
+            if (ap.getCurrentState().isInGame()) {
+              if (PlayerUtils.containsSword(Lists.newArrayList(pls.getInventory().getContents())) && pls.getItemOnCursor().getType() != WOOD_SWORD) {
+                if (pls.getInventory().contains(WOOD_SWORD))
+                  pls.getInventory().remove(WOOD_SWORD);
+              } else {
+                if (!pls.getInventory().contains(WOOD_SWORD) && pls.getItemOnCursor().getType() != WOOD_SWORD) {
+                  if (ap.getTeam() != null) {
+                    if (ap.getTeam().hasUpgrade(UpgradeType.SHARPENED_SWORDS)) {
+                      pls.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).enchant(Enchantment.DAMAGE_ALL, ap.getTeam().getTier(UpgradeType.SHARPENED_SWORDS)).build());
+                      pls.updateInventory();
+                    } else {
+                      pls.getInventory().addItem(new ItemBuilder(Material.WOOD_SWORD).build());
 
+                    }
                   }
                 }
               }
-
-
             }
           }
         }

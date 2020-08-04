@@ -75,68 +75,82 @@ public class PlayerInteractListener implements Listener {
           evt.setCancelled(true);
           return;
         }
+        if (ap.getCurrentState().isSpectating() && evt.getClickedBlock() != null && evt.getClickedBlock().getType().name().contains("CHEST") && evt.getAction().name().contains("RIGHT")) {
+          evt.setCancelled(true);
+          return;
+        }
 
 
         if (arena != null) {
-          if (arena.getState() != IN_GAME || ap.getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
-            evt.setCancelled(true);
-            if (item != null && evt.getAction().name().contains("RIGHT")) {
-              if (item.getType() == Material.PAPER) {
-                MatchmakingController.findMatch(hp, arena.getConfiguration().getMode().toUpperCase());
-              } else if (item.getType() == Material.BED) {
-                ServerItem.getServerItem("lobby").connect(hp);
+          if (item != null) {
+            if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+              if (item.getItemMeta().getDisplayName().equals("§aJogadores §7(Clique)")) {
+                if (ap.getCurrentState() == ArenaPlayer.CurrentState.SPECTATING) {
+                  if (arena.getSpectatorMenu() != null) {
+                    arena.getSpectatorMenu().open(player);
+                  }
+                }
               }
             }
-          } else {
-            if (evt.getClickedBlock() != null && evt.getClickedBlock().getType() == Material.CHEST) {
-              Team team = arena.listTeams().stream().filter(t -> t.getBorder().contains(evt.getClickedBlock().getLocation())).findFirst().orElse(null);
-              if (team != null && team.getSitation() != Team.Sitation.ELIMINATED) {
-                if (!team.getMembers().contains(ap)) {
-                  evt.setCancelled(true);
-                  player.sendMessage("§cVocê não pode abrir este baú enquanto o time não estiver eliminado.");
+            if (arena.getState() != IN_GAME || ap.getCurrentState() != ArenaPlayer.CurrentState.IN_GAME) {
+              evt.setCancelled(true);
+              if (item != null && evt.getAction().name().contains("RIGHT")) {
+                if (item.getType() == Material.PAPER) {
+                  MatchmakingController.findMatch(hp, arena.getConfiguration().getMode().toUpperCase());
+                } else if (item.getType() == Material.BED) {
+                  ServerItem.getServerItem("lobby").connect(hp);
                 }
               }
-            } else if (item != null && evt.getAction().name().contains("RIGHT")) {
-              if (item.getType().name().contains("WATER_BUCKET")) {
-                if (evt.getClickedBlock() != null) {
-                  Block block = evt.getClickedBlock();
-                  if (!arena.getBorders().contains(block.getLocation()) || !arena.getBorders().contains(block.getRelative(BlockFace.UP).getLocation())) {
+            } else {
+              if (evt.getClickedBlock() != null && evt.getClickedBlock().getType() == Material.CHEST) {
+                Team team = arena.listTeams().stream().filter(t -> t.getBorder().contains(evt.getClickedBlock().getLocation())).findFirst().orElse(null);
+                if (team != null && team.getSitation() != Team.Sitation.ELIMINATED) {
+                  if (!team.getMembers().contains(ap)) {
                     evt.setCancelled(true);
-                    player.sendMessage("§cVocê não pode quebrar por água aqui.");
-                    return;
+                    player.sendMessage("§cVocê não pode abrir este baú enquanto o time não estiver eliminado.");
                   }
+                }
+              } else if (item != null && evt.getAction().name().contains("RIGHT")) {
+                if (item.getType().name().contains("WATER_BUCKET")) {
+                  if (evt.getClickedBlock() != null) {
+                    Block block = evt.getClickedBlock();
+                    if (!arena.getBorders().contains(block.getLocation()) || !arena.getBorders().contains(block.getRelative(BlockFace.UP).getLocation())) {
+                      evt.setCancelled(true);
+                      player.sendMessage("§cVocê não pode quebrar por água aqui.");
+                      return;
+                    }
 
-                  if (!arena.isProtected(block.getLocation())) {
-                    Bukkit.getScheduler()
-                      .runTaskLaterAsynchronously(Core.getInstance(), () -> BukkitUtils.removeItem(player.getInventory(), Material.matchMaterial("BUCKET"), 1), 1);
+                    if (!arena.isProtected(block.getLocation())) {
+                      BukkitUtils.removeItem(player.getInventory(), Material.matchMaterial("BUCKET"), 1);
+                    }
                   }
-                }
-              } else if (evt.getAction().name().contains("AIR") && item.getType().name().contains("FIREBALL")) {
-                //  Fireball fire = NMS.createFireball(player);
-                // fire.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), true));
-                Location eye = player.getEyeLocation();
-                Location loc = eye.add(eye.getDirection().multiply(1.2));
-                Fireball f = (Fireball) loc.getWorld().spawnEntity(loc, EntityType.FIREBALL);
-                f.setVelocity(loc.getDirection().normalize().multiply(0.5));
-                f.setShooter(player);
-                f.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), player));
-                BukkitUtils.removeItem(player.getInventory(), item.getType(), 1);
-              }
-              else if (evt.getAction() == Action.RIGHT_CLICK_BLOCK && evt.getItem() != null && evt.getItem().getType() == Material.MONSTER_EGG) {
-                if (ap.getTeam()!=null) {
-                  NMS.createIronGolem(arena, ap.getTeam(), evt.getClickedBlock().getLocation());
+                } else if (evt.getAction().name().contains("AIR") && item.getType().name().contains("FIREBALL")) {
+                  //  Fireball fire = NMS.createFireball(player);
+                  // fire.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), true));
+                  Location eye = player.getEyeLocation();
+                  Location loc = eye.add(eye.getDirection().multiply(1.2));
+                  Fireball f = (Fireball) loc.getWorld().spawnEntity(loc, EntityType.FIREBALL);
+                  f.setVelocity(loc.getDirection().normalize().multiply(0.5));
+                  f.setShooter(player);
+                  f.setMetadata("BEDWARS_FIREBALL", new FixedMetadataValue(Core.getInstance(), player));
                   BukkitUtils.removeItem(player.getInventory(), item.getType(), 1);
-                }
-              }
-              else if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-                if (item.getItemMeta().getDisplayName().equals("§aRastreador")) {
-                  new TrackerShopMenu(ap);
+                } else if (evt.getAction() == Action.RIGHT_CLICK_BLOCK && evt.getItem() != null && evt.getItem().getType() == Material.MONSTER_EGG) {
+                  if (ap.getTeam() != null) {
+                    NMS.createIronGolem(arena, ap.getTeam(), evt.getClickedBlock().getLocation().add(0, 1, 0));
+                    BukkitUtils.removeItem(player.getInventory(), item.getType(), 1);
+                  }
+                } else if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+                  if (item.getItemMeta().getDisplayName().equals("§aRastreador")) {
+                    new TrackerShopMenu(ap);
+                  }
                 }
               }
             }
           }
+
         }
       }
     }
   }
+
 }

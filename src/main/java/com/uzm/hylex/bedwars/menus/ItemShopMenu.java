@@ -90,7 +90,9 @@ public class ItemShopMenu extends PlayerMenu {
 
               if (team != null) {
                 equipment.addItem(si);
-                this.ap.refresh();
+                if (si.getCategory().getKey().equalsIgnoreCase("melee") ||si.getCategory().getKey().equalsIgnoreCase("armors")||si.getCategory().getKey().equalsIgnoreCase("tools"))
+                ap.refresh(false);
+                this.player.updateInventory();
               }
 
               player.sendMessage("§aVocê comprou §6" + StringUtils.stripColors(item.getItemMeta().getDisplayName()));

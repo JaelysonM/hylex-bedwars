@@ -3,6 +3,7 @@ package com.uzm.hylex.bedwars.listeners.player;
 import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.core.api.HylexPlayer;
+import com.uzm.hylex.core.controllers.FakeController;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,17 +26,18 @@ public class PlayerChatListener implements Listener {
 
     boolean shout = evt.getMessage().startsWith("!g");
 
-    if (shout && evt.getMessage().trim().split("!g").length == 0 || evt.getMessage().trim().equalsIgnoreCase("!g"))  {
-       evt.getPlayer().sendMessage("§cUse /g <mensagem>");
-       evt.setCancelled(true);
-       return;
+    if (shout && evt.getMessage().trim().split("!g").length == 0 || evt.getMessage().trim().equalsIgnoreCase("!g")) {
+      evt.getPlayer().sendMessage("§cUse /g <mensagem>");
+      evt.setCancelled(true);
+      return;
     }
+
     evt.setMessage(evt.getMessage().replace("!g", "").trim());
 
     Player player = evt.getPlayer();
     HylexPlayer hp = HylexPlayer.getByPlayer(player);
 
-    String color = player.hasPermission("hylex.colorchat") ? "§f" : "§7";
+    String color = player.hasPermission("hylex.colorchat") && !FakeController.has(player.getName()) ? "§f" : "§7";
     if (player.hasPermission("hylex.colorchat")) {
       evt.setMessage(ChatColor.translateAlternateColorCodes('&', evt.getMessage()));
     }
@@ -87,6 +89,6 @@ public class PlayerChatListener implements Listener {
       }
     }
 
-    evt.setFormat("§8[STAFF] %s" + color + ": %s");
+    evt.setFormat("§8[OUT] %s" + color + ": %s");
   }
 }

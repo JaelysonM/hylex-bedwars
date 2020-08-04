@@ -13,10 +13,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.json.simple.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.IDLE;
 
@@ -24,6 +21,8 @@ public class ArenaBlocks {
 
   private Arena arena;
   private Set<Block> placed = new HashSet<>();
+
+  private static LinkedHashMap<String,Integer> RESET_COUNT = new LinkedHashMap<>();
 
   public ArenaBlocks(Arena arena) {
     this.arena = arena;
@@ -51,12 +50,12 @@ public class ArenaBlocks {
    long total_ram = Runtime.getRuntime().totalMemory() / 1024 / 1024;
     long used_ram = total_ram - Runtime.getRuntime().freeMemory() / 1024 / 1024;
 
-    if ((used_ram/total_ram)*100 >= 90) {
+    if (RESET_COUNT.getOrDefault(this.arena.getArenaName(),0) >= Core.restartingCount ) {
       if (ArenaController.listArenas().stream().filter(result -> (result.getState() == Enums.ArenaState.IDLE)).count() >= ArenaController.getArenas().size()) {
         JSONObject json = new JSONObject();
         json.put("clientName", "core-" + com.uzm.hylex.core.Core.SOCKET_NAME);
         WebSocket.get("core-" + com.uzm.hylex.core.Core.SOCKET_NAME).getSocket().emit("send-restart-require", json);
-        Bukkit.getConsoleSender().sendMessage("Module: Core] a permission to restart");
+        Bukkit.getConsoleSender().sendMessage("Module: Core] Send a permission to restart");
       }
       return;
     }
@@ -83,10 +82,16 @@ public class ArenaBlocks {
         @Override
         public void run() {
           if (reseting != null) {
+            if (!RESET_COUNT.containsKey(this.reseting.getArenaName())) {
+              RESET_COUNT.put(this.reseting.getArenaName(),1);
+            }else {
+              RESET_COUNT.put(this.reseting.getArenaName(),RESET_COUNT.get(this.reseting.getArenaName()) + 1);
+            }
             ArenaController.arenas.remove(this.reseting.getArenaName());
             ArenaController.loadArena(this.reseting.getArenaName());
             this.reseting.destroy();
             this.reseting = null;
+            System.gc();
             return;
           }
 

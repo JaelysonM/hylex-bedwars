@@ -19,15 +19,17 @@ public class PlayerQuitListener implements Listener  {
     evt.setQuitMessage(null);
 
     Player player = evt.getPlayer();
-    HylexPlayer hp = HylexPlayer.remove(player);
+    HylexPlayer hp = HylexPlayer.getByPlayer(player);
     if (hp != null) {
       ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
       if (ap != null) {
+        if (ap.getArena() !=null)
         ap.getArena().leave(hp);
 
       }
       hp.save();
       hp.destroy();
+      HylexPlayer.remove(player);
     }
     TagController.remove(player);
     player.getInventory().clear();
@@ -36,15 +38,17 @@ public class PlayerQuitListener implements Listener  {
   @EventHandler(priority = EventPriority.HIGHEST)
   public void onPlayerQuit(PlayerKickEvent evt) {
     Player player = evt.getPlayer();
-    HylexPlayer hp = HylexPlayer.remove(player);
+    HylexPlayer hp = HylexPlayer.getByPlayer(player);
     if (hp != null) {
       ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
       if (ap != null) {
+        if (ap.getArena() !=null)
         ap.getArena().leave(hp);
 
       }
       hp.save();
       hp.destroy();
+      HylexPlayer.remove(player);
     }
     TagController.remove(player);
     player.getInventory().clear();

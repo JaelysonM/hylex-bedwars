@@ -5,6 +5,7 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.entity.Player;
 
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class BungeePluginMessageListener implements org.bukkit.plugin.messaging.PluginMessageListener {
@@ -32,11 +33,11 @@ public class BungeePluginMessageListener implements org.bukkit.plugin.messaging.
         int port = in.readUnsignedShort();
         boolean connected = false;
 
+        Socket s = new Socket();
         try {
-          Socket socket = new Socket(ip, port);
-          connected = socket.isConnected();
-          socket.close();
-
+          s.connect(new InetSocketAddress(ip, port), 10);
+          connected = s.isConnected();
+          s.close();
         } catch (Exception ignored) {
         }
         if (ServerItem.SERVER_INFO.containsKey(server)) {
@@ -46,6 +47,6 @@ public class BungeePluginMessageListener implements org.bukkit.plugin.messaging.
         }
       }
     }
-    }
-
   }
+
+}

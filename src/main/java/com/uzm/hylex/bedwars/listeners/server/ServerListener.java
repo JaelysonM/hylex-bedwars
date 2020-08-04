@@ -6,6 +6,7 @@ import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
 import com.uzm.hylex.core.api.HylexPlayer;
 import com.uzm.hylex.core.api.interfaces.Enums;
+import net.minecraft.server.v1_8_R3.EntityItem;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -122,9 +123,13 @@ public class ServerListener implements Listener {
   public void onItemMerge(ItemMergeEvent evt) {
     if (evt.getEntity() != null) {
       Item i = evt.getEntity();
-      if (i.getItemStack().getType() == Material.GOLD_INGOT || i.getItemStack().getType() == Material.IRON_INGOT) {
-        evt.setCancelled(true);
+
+      if (i.getItemStack() !=null) {
+        if (i.getItemStack().getType() == Material.GOLD_INGOT || i.getItemStack().getType() == Material.IRON_INGOT) {
+          evt.setCancelled(true);
+        }
       }
+
     }
   }
 
@@ -135,9 +140,11 @@ public class ServerListener implements Listener {
         Player player = (Player) h;
         HylexPlayer hp = HylexPlayer.getByPlayer(player);
         if (hp != null) {
-          ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
-          if (ap.getArena() != null) {
-            evt.getInventory().setResult(new ItemStack(Material.AIR));
+          if (hp.getArenaPlayer() !=null) {
+            ArenaPlayer ap = (ArenaPlayer) hp.getArenaPlayer();
+            if (ap.getArena() != null) {
+              evt.getInventory().setResult(new ItemStack(Material.AIR));
+            }
           }
         }
       }

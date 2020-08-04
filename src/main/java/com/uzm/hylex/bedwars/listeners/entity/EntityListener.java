@@ -6,6 +6,7 @@ import com.uzm.hylex.bedwars.arena.team.Team;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
 import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
 import org.bukkit.entity.*;
@@ -15,6 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.potion.PotionEffectType;
 
 import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.IN_GAME;
 
@@ -24,6 +26,19 @@ public class EntityListener implements Listener {
   public void onEntityDamageByEntity(EntityDamageByEntityEvent evt) {
     if (evt.isCancelled()) {
       return;
+    }
+    if (evt.getDamager() instanceof Player) {
+      Player damager = (Player) evt.getDamager();
+      HylexPlayer hp = HylexPlayer.getByPlayer(damager);
+      if (hp != null) {
+        if (hp.getArenaPlayer() != null) {
+          if (((ArenaPlayer) hp.getArenaPlayer()).getCurrentState().isSpectating()) {
+            evt.setCancelled(true);
+            return;
+          }
+        }
+      }
+
     }
     if (evt.getEntity() instanceof Player) {
       Player player = (Player) evt.getEntity();
@@ -43,8 +58,23 @@ public class EntityListener implements Listener {
       if (evt.getDamager() instanceof Player) {
         damager = (Player) evt.getDamager();
         hp2 = HylexPlayer.getByPlayer(damager);
-        if (hp2 == null || hp2.getArenaPlayer() == null || !hp2.getArenaPlayer().getArena().equals(arena) || ((ArenaPlayer) hp2.getArenaPlayer())
-          .getCurrentState() != ArenaPlayer.CurrentState.IN_GAME || (!damager.equals(player) && team != null && team.equals(((ArenaPlayer) hp2.getArenaPlayer()).getTeam()))) {
+
+        if (hp2 == null) {
+          evt.setCancelled(true);
+          return;
+        } else if (hp2.getArenaPlayer() == null) {
+          evt.setCancelled(true);
+          return;
+        } else if (hp2.getArenaPlayer().getArena() != arena) {
+          evt.setCancelled(true);
+          return;
+        } else if (!((ArenaPlayer) hp2.getArenaPlayer()).getCurrentState().isInGame()) {
+          evt.setCancelled(true);
+          return;
+        } else if (((ArenaPlayer) hp2.getArenaPlayer()).getTeam() == null) {
+          evt.setCancelled(true);
+          return;
+        } else if (team == ((ArenaPlayer) hp2.getArenaPlayer()).getTeam()) {
           evt.setCancelled(true);
           return;
         }
@@ -52,9 +82,6 @@ public class EntityListener implements Listener {
 
       if (evt.getDamager() instanceof Projectile) {
         Projectile proj = (Projectile) evt.getDamager();
-      /*  if (proj.hasMetadata("BEDWARS_FIREBALL")) {
-        }
-*/
         if (proj.getShooter() instanceof Player) {
           damager = (Player) proj.getShooter();
           hp2 = HylexPlayer.getByPlayer(damager);
@@ -67,7 +94,9 @@ public class EntityListener implements Listener {
       }
 
       if (damager != null) {
-        hp.setLastHit(damager);
+        player.removePotionEffect(PotionEffectType.INVISIBILITY);
+        damager.removePotionEffect(PotionEffectType.INVISIBILITY);
+        hp.setLastHit(damager, 5);
       }
     } else if (evt.getEntity() instanceof Fireball && evt.getDamager() instanceof Player) {
       Player damager = (Player) evt.getDamager();
@@ -76,6 +105,7 @@ public class EntityListener implements Listener {
         evt.setCancelled(true);
       }
     }
+
   }
 
   @EventHandler
@@ -118,7 +148,9 @@ public class EntityListener implements Listener {
     if (proj.hasMetadata("BEDWARS_FIREBALL")) {
       if (explosionLocation != null) {
         boolean flag = ((CraftWorld) explosionLocation.getWorld()).getHandle().getGameRules().getBoolean("mobGriefing");
-        ((CraftWorld) explosionLocation.getWorld()).getHandle().createExplosion(((CraftEntity) evt.getEntity()).getHandle(), explosionLocation.getX(), explosionLocation.getY() + 0.98 / 2.0F, explosionLocation.getZ() ,1.0F, true, true);
+        ((CraftWorld) explosionLocation.getWorld()).getHandle()
+          .createExplosion(((CraftEntity) evt.getEntity()).getHandle(), explosionLocation.getX(), explosionLocation.getY() + 0.98 / 2.0F, explosionLocation.getZ(), 1.0F, true,
+            true);
       }
 
     }
@@ -134,7 +166,26 @@ public class EntityListener implements Listener {
   public void onItemSpawn(ItemSpawnEvent evt) {
     Arena arena = ArenaController.getArena(evt.getEntity().getWorld().getName());
     if (arena == null || arena.getState() != IN_GAME || evt.getEntity().getItemStack().getType().name().contains("BED")) {
+      evt.getEntity().remove();
       evt.setCancelled(true);
+    }
+  }
+
+  @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+  public void onItemSpawnMonitor(ItemSpawnEvent evt) {
+    if (evt.getEntity().getItemStack() == null) {
+      evt.setCancelled(true);
+      evt.getEntity().remove();
+    }
+  }
+
+  @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+  public void onItemSpawnBugFix(ItemSpawnEvent evt) {
+    if (evt.getEntity().getItemStack() != null) {
+      if (evt.getEntity().getItemStack().getType() == Material.STONE || evt.getEntity().getItemStack().getType() == null) {
+        evt.setCancelled(true);
+        evt.getEntity().remove();
+      }
     }
   }
 

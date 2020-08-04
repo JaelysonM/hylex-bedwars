@@ -5,7 +5,11 @@ import com.uzm.hylex.bedwars.arena.Arena;
 import com.uzm.hylex.bedwars.arena.creator.inventory.ArenasMenu;
 import com.uzm.hylex.bedwars.arena.creator.inventory.MainPainel;
 import com.uzm.hylex.bedwars.arena.creator.inventory.WorldsMenu;
+import com.uzm.hylex.bedwars.arena.generators.Generator;
+import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
+import com.uzm.hylex.bedwars.arena.team.Team;
 import com.uzm.hylex.bedwars.controllers.ArenaController;
+import com.uzm.hylex.bedwars.proxy.ServerItem;
 import com.uzm.hylex.core.api.HylexPlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,6 +17,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+
+import static com.uzm.hylex.core.api.interfaces.Enums.ArenaState.IDLE;
 
 public class ArenaCommand implements CommandExecutor {
 
@@ -78,6 +84,33 @@ public class ArenaCommand implements CommandExecutor {
                 player.sendMessage("§6[ArenaCreator] §7Não existe uma arena-mini como o nome §c" + args[1]);
               }
               break;
+            case "inative":
+              if (ArenaController.getArena(args[1]) != null) {
+                Arena arena = ArenaController.getArena(args[1]);
+                player.sendMessage("§6[ArenaCreator] §7A arena-mini com o nome §c" + args[1] + " §7agora está inativa.");
+
+
+                arena.getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(players -> {
+                  if (players != null) {
+                    if (HylexPlayer.getByPlayer(players) !=null)
+                    ServerItem.getServerItem("lobby").connect(HylexPlayer.getByPlayer(players));
+                    else
+                      players.kickPlayer("§cPartida encerrada!");
+                  }
+                });
+
+                arena.listTeams().forEach(Team::resetTeam);
+                arena.getGenerators().forEach(Generator::disable);
+                arena.getMainTask().cancel();
+                arena.setState(IDLE);
+                System.gc();
+
+
+              }else {
+                player.sendMessage("§6[ArenaCreator] §7Não existe uma arena-mini como o nome §c" + args[1]);
+
+              }
+              break;
             default:
               help(player, label);
               break;
@@ -100,6 +133,7 @@ public class ArenaCommand implements CommandExecutor {
     player.sendMessage("  §e- §f/" + label + " create <mini> §7Crie uma arena mini.");
     player.sendMessage("  §e- §f/" + label + " delete <mini> §7Crie uma arena mini.");
     player.sendMessage("  §e- §f/" + label + " edit <mini> §7Abra o painel para edição da arena.");
+    player.sendMessage("  §e- §f/" + label + " inative <mini> §7Deixe uma arena inativa.");
     player.sendMessage("  §e- §f/" + label + " configure §7Abra o painel da arena recentemente criada por você.");
     player.sendMessage("  §e- §f/" + label + " list §7Liste todas as arenas do mega.");
     player.sendMessage("");

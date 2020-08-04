@@ -20,8 +20,14 @@ import static com.uzm.hylex.bedwars.arena.generators.Generator.Type.EMERALD;
 public class Generator {
 
   public enum Type {
-    EMERALD,
-    DIAMOND;
+    EMERALD(Material.EMERALD),
+    DIAMOND(Material.DIAMOND);
+
+    private Material material;
+
+    Type(Material material) {
+      this.material = material;
+    }
 
     public String getName() {
       if (this == EMERALD) {
@@ -32,7 +38,7 @@ public class Generator {
     }
 
     public Material getItem() {
-      return Material.matchMaterial(this.name());
+      return material;
     }
 
     public ItemStack getBlock() {
@@ -76,20 +82,21 @@ public class Generator {
       this.hologram = null;
     }
   }
+
   public void tick() {
     ArmorStand armorStand = this.block.getEntity();
     Location location = armorStand.getLocation();
-    location.setYaw((location.getYaw() + 7.5F));
+    location.setYaw((location.getYaw() + 8.5F));
     if (!this.floatLoop) {
-      location.add(0, 0.01, 0);
+      location.add(0, 0.08, 0);
 
-      if (armorStand.getLocation().getY() > (0.25 + (this.location.getY() + 1.5))) {
+      if (armorStand.getLocation().getY() > (0.30 + (this.location.getY() + 1.5))) {
         this.floatLoop = true;
       }
     } else {
-      location.subtract(0, 0.01, 0);
+      location.subtract(0, 0.08, 0);
 
-      if (armorStand.getLocation().getY() < (-0.25 + (this.location.getY() + 1.5))) {
+      if (armorStand.getLocation().getY() < (-0.33 + (this.location.getY() + 1.5))) {
         this.floatLoop = false;
       }
     }
@@ -101,8 +108,9 @@ public class Generator {
       if (this.countdown == 0) {
         if (ItemStackUtils.getAmountOfItem(this.type.getItem(), this.location) < 4) {
           Item item = this.location.getWorld().dropItem(this.location, new ItemStack(this.type.getItem()));
-          item.setPickupDelay(0);
-          item.setVelocity(new Vector());
+          item.setPickupDelay(20);
+          item.setVelocity(new Vector().setY(0.02));
+
         }
         this.countdown = type == DIAMOND ? arena.getUpgradeState().getDiamondDelay() : arena.getUpgradeState().getEmeraldDelay();
         this.hologram.updateLine(1, "§eSpawnando em §c" + getDelay() + " §esegundos");

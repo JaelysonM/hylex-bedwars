@@ -7,6 +7,7 @@ import com.uzm.hylex.bedwars.arena.improvements.traps.ItsaTrap;
 import com.uzm.hylex.bedwars.arena.improvements.traps.MinerFatigueTrap;
 import com.uzm.hylex.bedwars.arena.player.ArenaPlayer;
 import com.uzm.hylex.bedwars.arena.team.Team;
+import com.uzm.hylex.core.spigot.features.SpigotFeatures;
 import com.uzm.hylex.core.spigot.features.Titles;
 
 import java.util.LinkedHashSet;
@@ -24,14 +25,13 @@ public abstract class Trap {
 
   public void onEnter(Team owner, ArenaPlayer ap) {
     if (!ap.getCurrentState().isSpectating()) {
-      if (ap.getPlayer() !=null) {
+      if (ap.getPlayer() != null) {
         owner.setLastTrapped(ap.getPlayer());
-        owner.getMembers().forEach(
-          aps -> {
-            if (aps.getPlayer() !=null) {
-              new Titles(aps.getPlayer(), Titles.TitleType.BOTH).setTopMessage("§c§lARMADILHA ATIVADA").setBottomMessage("§fUm jogador caiu na armadilha").send(20, 120, 20);
-            }
-          });
+        owner.getMembers().forEach(aps -> {
+          if (aps.getPlayer() != null) {
+            SpigotFeatures.sendTitle(aps.getPlayer(), Titles.TitleType.BOTH, "§c§lARMADILHA ATIVADA", "§fUm jogador caiu na armadilha", 20, 120, 20);
+         }
+        });
 
       }
     }

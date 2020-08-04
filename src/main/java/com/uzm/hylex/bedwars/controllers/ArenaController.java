@@ -29,7 +29,7 @@ import static com.uzm.hylex.core.spigot.utils.VoidChunkGenerator.VOID_CHUNK_GENE
 public class ArenaController {
 
   public static Collection<Arena> listArenas() {
-    return ImmutableList.copyOf(arenas.values());
+    return arenas.values();
   }
 
   public static HashMap<String, Arena> getArenas() {
@@ -37,6 +37,7 @@ public class ArenaController {
   }
 
   public static void loadArena(String name) {
+    System.gc();
     ConfigurationCreator creator = new ConfigurationCreator(Core.getInstance(), name, "arenas/");
     World world;
     File file = new File(Core.getInstance().getDataFolder(), "backup/" + creator.get().getString("configuration.worldName"));
@@ -80,6 +81,7 @@ public class ArenaController {
       }
     }
   }
+
 
   public static void saveArena(Arena interfaceArena) {
     ConfigurationCreator creator = new ConfigurationCreator(getInstance(), interfaceArena.getArenaName(), "arenas/");

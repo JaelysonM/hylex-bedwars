@@ -11,9 +11,10 @@ import com.uzm.hylex.core.nms.NMS;
 import com.uzm.hylex.core.spigot.features.Titles;
 import com.uzm.hylex.core.spigot.items.ItemBuilder;
 import com.uzm.hylex.core.spigot.scoreboards.AsyncScoreboard;
-import com.uzm.hylex.core.spigot.scoreboards.scroller.Scroller;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -37,20 +38,59 @@ public class ArenaPlayer implements IArenaPlayer {
   private int final_kills;
   private int kills;
 
-  private int coinsEarned = 0;
-  private int expEarned = 0;
+  private Player lastKill;
+
+
+  private long TIMESTAMP_lastKill;
+
+  private int killSequence;
+
+  private int coinsEarned;
+  private int expEarned;
+
+  private int levelEarned;
 
   private long startedTime;
 
   public ArenaPlayer(HylexPlayer player, Arena arena) {
     this.arena = arena;
-    this.player = player.getPlayer();
+    this.player = Bukkit.getPlayerExact(player.getName());
     this.currentState = CurrentState.WAITING;
     /*Scroller  scroller = new Scroller("§6§lBEDWARS", "§6", "§c", "§f", true, Scroller.ScrollType.FORWARD, "§c§lBEDWARS",
       "§f§lBEDWARS","§c§lBEDWARS");
       */
+    if (this.player != null) {
+      this.setScoreboard(new AsyncScoreboard(this.player));
+    }
+  }
 
-    this.setScoreboard(new AsyncScoreboard(player.getPlayer()));
+  public Player getLastKill() {
+    return lastKill;
+  }
+
+  public void setLastKill(Player lastKill) {
+    this.lastKill = lastKill;
+  }
+
+  public void setLastKillTimeStamp(long value) {
+    this.TIMESTAMP_lastKill = value;
+  }
+
+  public long getLastKillTimeStamp() {
+    return this.TIMESTAMP_lastKill;
+  }
+
+  public int getKillSequence() {
+    return killSequence;
+  }
+
+
+  public void addKillSequence() {
+    this.killSequence += 1;
+  }
+
+  public void setKillSequence(int killSequence) {
+    this.killSequence = killSequence;
   }
 
   public void setScoreboard(AsyncScoreboard scoreboard) {
@@ -58,19 +98,33 @@ public class ArenaPlayer implements IArenaPlayer {
     this.scoreboard.updateTitle("§6§lBEDWARS");
   }
 
+  public void setLevelEarned(int levelEarned) {
+    this.levelEarned = levelEarned;
+  }
+
+  public int getLevelEarned() {
+    return levelEarned;
+  }
+
+
   public void destroy() {
     this.arena = null;
-    this.player = null;
     this.currentState = null;
-    this.team = null;
-    this.scoreboard.delete();
+    if (this.scoreboard != null)
+      this.scoreboard.delete();
     this.scoreboard = null;
     this.equipment = null;
     this.coinsEarned = 0;
     this.final_kills = 0;
     this.beds_broken = 0;
     this.kills = 0;
+    this.killSequence = 0;
+    this.TIMESTAMP_lastKill = 0;
+    this.levelEarned = 0;
+    this.lastKill = null;
+    System.gc();
   }
+
 
   public void update() {
     if (getPlayer() != null) {
@@ -116,9 +170,12 @@ public class ArenaPlayer implements IArenaPlayer {
           getPlayer().getInventory().clear();
           getPlayer().getInventory().setArmorContents(new ItemStack[4]);
 
-          getPlayer().getInventory().setItem(7, new ItemBuilder(Material.PAPER).name("§bJogar Novamente").lore("§7Clique para se conectar a outra sala.").build());
+          getPlayer().getInventory().setItem(0, new ItemBuilder(Material.COMPASS).name("§aJogadores §7(Clique)").lore("§7Clique para ver os jogadores da partida.").build());
 
-          getPlayer().getInventory().setItem(8, new ItemBuilder(Material.BED).name("§cVoltar ao Lobby").lore("§7Clique para voltar ao Lobby.").build());
+
+          getPlayer().getInventory().setItem(7, new ItemBuilder(Material.PAPER).name("§bJogar Novamente §7(Clique)").lore("§7Clique para se conectar a outra sala.").build());
+
+          getPlayer().getInventory().setItem(8, new ItemBuilder(Material.BED).name("§cVoltar ao Lobby §7(Clique)").lore("§7Clique para voltar ao Lobby.").build());
 
           getPlayer().updateInventory();
           break;
@@ -139,20 +196,23 @@ public class ArenaPlayer implements IArenaPlayer {
 
               if (count == 0) {
                 cancel();
-                if (getPlayer() != null && getPlayer().isOnline()) {
-                  setCurrentState(CurrentState.IN_GAME);
-                  update();
-                  NMS.sendTitle(player, Titles.TitleType.BOTH, "", "", 0, 0, 0);
-                  getPlayer().teleport(getTeam().getSpawnLocation());
-                  getPlayer().sendMessage("§eVocê renasceu!");
 
-                  getArena().getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(players -> players.showPlayer(player));
-                }
+                NMS.sendTitle(player, Titles.TitleType.BOTH, "", "", 0, 0, 0);
+                setCurrentState(CurrentState.IN_GAME);
+                update();
+                getPlayer().teleport(getTeam().getSpawnLocation());
+                setKillSequence(0);
+                setLastKillTimeStamp(0);
+
+                getPlayer().sendMessage("§eVocê renasceu!");
+
+                getArena().getArenaPlayers().stream().map(a -> ((ArenaPlayer) a).getPlayer()).forEach(players -> players.showPlayer(player));
+
                 return;
               }
 
               if (getPlayer().isOnline()) {
-                NMS.sendTitle(player, Titles.TitleType.BOTH, "§fRespawnando em " + count + " segundo" + (count > 1 ? "s" : "") + "!", "§c§lVOCÊ MORREU", 0, 20, 0);
+                NMS.sendTitle(player, Titles.TitleType.BOTH, "§fRenascendo em " + count + " segundo" + (count > 1 ? "s" : "") + "!", "§c§lVOCÊ MORREU", 0, 20, 0);
               }
 
               count--;
@@ -163,7 +223,7 @@ public class ArenaPlayer implements IArenaPlayer {
           if (getPlayer() != null) {
             getPlayer().setGameMode(GameMode.SURVIVAL);
             equip();
-            refresh();
+            refresh(true);
             getPlayer().setNoDamageTicks(60);
           }
           break;
@@ -175,6 +235,9 @@ public class ArenaPlayer implements IArenaPlayer {
   public void rewardSumary() {
     if (getPlayer() != null) {
       HylexPlayer hp = HylexPlayer.getByPlayer(getPlayer());
+      if (hp ==null) return;
+      if (!hp.isAccountLoaded()) return;
+      if (hp.getBedWarsStatistics() ==null) return;
       long level = HylexPlayerController.getLevel(hp);
       long exp = HylexPlayerController.getExp(hp);
       getPlayer().sendMessage("§a§m--------------------------------------------------");
@@ -184,7 +247,13 @@ public class ArenaPlayer implements IArenaPlayer {
       getPlayer().sendMessage("  §f• §6" + StringUtils.formatNumber((hp.getBedWarsStatistics().getLong("coins", "global") - getCoinsEarned())) + " Bedwars Coins");
       getPlayer().sendMessage("");
       getPlayer().sendMessage(StringUtils.center("§BExperiência do BedWars", 60));
-      getPlayer().sendMessage("      §bNível " + level + "                                            §bNível " + (level + 1));
+      if (level != getLevelEarned()) {
+        getPlayer().sendMessage(StringUtils.center("§6§k::::::§B Você subiu para o nível " + level + " §6§k::::::§r", 80));
+        getPlayer().playSound(getPlayer().getLocation(), Sound.LEVEL_UP, 1.2F, 1.2F);
+      } else {
+        getPlayer().sendMessage("      §bNível " + level + "                                            §bNível " + (level + 1));
+
+      }
       getPlayer().sendMessage(StringUtils.center(StringUtils.progressDataBar(exp, 5000, 34), 55).replace("&", "§"));
       getPlayer().sendMessage(StringUtils.center("§b" + StringUtils.formatNumber(exp) + " §7/ §a5000 §7(" + StringUtils.formatNumber(((float) exp / 5000.0F) * 100.0F) + "%)", 70));
       getPlayer().sendMessage("    ");
@@ -203,11 +272,14 @@ public class ArenaPlayer implements IArenaPlayer {
   }
 
   public void equip() {
-    this.equipment.refresh();
+    if (this.equipment != null)
+      this.equipment.refresh();
   }
 
-  public void refresh() {
-    if (this.team.hasUpgrade(MANIAC_MINER)) {
+  public void refresh(boolean nonShop) {
+    if (this.team == null)
+      return;
+    if (this.team.hasUpgrade(MANIAC_MINER) && nonShop) {
       getPlayer().removePotionEffect(PotionEffectType.FAST_DIGGING);
       getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING, Integer.MAX_VALUE, this.team.getTier(MANIAC_MINER) - 1));
     }
@@ -222,7 +294,6 @@ public class ArenaPlayer implements IArenaPlayer {
 
           item.addEnchantment(Enchantment.DAMAGE_ALL, this.team.getTier(SHARPENED_SWORDS));
           getPlayer().getInventory().setItem(i, item);
-          getPlayer().updateInventory();
         }
       }
     }
@@ -239,6 +310,8 @@ public class ArenaPlayer implements IArenaPlayer {
         }
       }
     }
+
+    getPlayer().updateInventory();
   }
 
   public void setTeam(Team team) {
@@ -276,7 +349,7 @@ public class ArenaPlayer implements IArenaPlayer {
   }
 
   public CurrentState getCurrentState() {
-    return this.currentState;
+    return this.currentState == null ? CurrentState.WAITING : this.currentState;
   }
 
   public void addKills() {

@@ -36,7 +36,7 @@ public class DiscordController {
           ContentType.APPLICATION_JSON);
         HttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost request = new HttpPost("https://discordapp.com/api/channels/722636962128855101/messages");
-        request.setHeader("Authorization", "Bot NzIwNjUwODQ0NTUwNDYzNTc5.XuJEig.NYL6hJA7lnNmer_fUDeKdqvlzRM");
+        request.setHeader("Authorization", "Bot N/A");
         request.setHeader("Content-Type", "application/json");
         request.setEntity(stringEntity);
         httpClient.execute(request);
